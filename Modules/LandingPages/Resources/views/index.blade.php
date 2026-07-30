@@ -13,7 +13,7 @@
     <!-- Navbar -->
     <header class="container mx-auto px-6 py-6 flex justify-between items-center border-b border-slate-800">
         <h1 class="text-2xl font-bold tracking-wider text-indigo-500">
-            PARJOS
+            PROTOTYPE
         </h1>
         <div class="space-x-4">
             <a
