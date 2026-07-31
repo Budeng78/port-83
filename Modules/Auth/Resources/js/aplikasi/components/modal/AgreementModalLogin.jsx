@@ -9,7 +9,7 @@ export default function AgreementModalLogin({ isOpen, termData, userDetails, onS
                 <div className="p-8">
                     {/* Menggunakan nama dari userDetails */}
                     <h3 className="text-2xl font-bold text-slate-900 mb-2 italic lowercase">
-                        halo pak {userDetails?.name || 'user parjos'},
+                        halo pak {userDetails?.name || 'user prototype'},
                     </h3>
                     <p className="text-slate-500 text-sm mb-6 lowercase">
                         ada kebijakan baru yang perlu bapak setujui sebelum lanjut ke sistem.

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import api, { csrf } from './axios/axios';
-import AgreementModalLogin from './components/modal/AgreementModalLogin';
-import PendingRegister from './components/modal/PendingRegister';
+import api, { csrf } from '../axios/axios';
+import AgreementModalLogin from "../components/modal/AgreementModalLogin";
+import PendingRegister from "../components/modal/PendingRegister";
 
 export default function Login() {
     // State Management
@@ -26,7 +26,7 @@ export default function Login() {
                 await csrf();
             }
             
-            const res = await api.post('/login', { 
+            const res = await api.post('/auth/login', { 
                 no_whatsapp: noWhatsapp, 
                 password 
             });
@@ -43,7 +43,9 @@ export default function Login() {
             }
 
             localStorage.setItem('access_token', access_token);
-            window.location.href = '/dashboard';
+            //Sementara saja == untuk menangani logika setelah login
+            alert("Login Berhasil! Token tersimpan. Selamat datang, " + (user?.name || 'Pengguna'));
+            window.location.href = '/app/dashboard';
 
         } catch (err) {
             if (err.response && err.response.status === 403) {
@@ -105,7 +107,7 @@ export default function Login() {
                                 autoComplete="username"
                                 value={noWhatsapp}
                                 onChange={(e) => setNoWhatsapp(e.target.value)} 
-                                className="input-parjos-light" 
+                                className="input-prototype-light" 
                                 placeholder="email@email.com / 0812345678" 
                                 required 
                             />
@@ -119,7 +121,7 @@ export default function Login() {
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)} 
-                                className="input-parjos-light" 
+                                className="input-prototype-light" 
                                 placeholder="••••••••" 
                                 required 
                             />
@@ -172,12 +174,12 @@ export default function Login() {
             />
 
             <style>{`
-                .input-parjos-light {
+                .input-prototype-light {
                     width: 100%; padding: 1rem 1.25rem; background-color: #f8fafc;
                     border: 1px solid #e2e8f0; border-radius: 1.25rem; font-weight: 600; outline: none; transition: all 0.2s; color: #0f172a;
                 }
-                .input-parjos-light::placeholder { color: #94a3b8; }
-                .input-parjos-light:focus { background-color: #ffffff; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+                .input-prototype-light::placeholder { color: #94a3b8; }
+                .input-prototype-light:focus { background-color: #ffffff; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
             `}</style>
         </div>
     );

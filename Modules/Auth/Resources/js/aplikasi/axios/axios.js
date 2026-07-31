@@ -19,6 +19,22 @@ const api = axios.create({
 });
 
 /**
+ * REQUEST INTERCEPTOR: Wajib ada agar token terkirim otomatis di header
+ */
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token && token !== 'undefined' && token !== 'null') {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+/**
  * CSRF Cookie - Penting untuk Sanctum
  */
 export const csrf = async () => {
@@ -37,28 +53,18 @@ api.interceptors.response.use(
   async (error) => {
     const { response: res } = error;
 
-    // --- 1. HANDLING ERROR 422 (VALIDATION ERROR) ---
     if (res && res.status === 422) {
       const validationErrors = res.data.errors;
-      // Gabungkan semua pesan error menjadi satu string untuk alert cepat
       const errorMessages = Object.values(validationErrors).flat().join("\n");
-      
-      console.error("Project Parjos - Validation Failed:", validationErrors);
       alert("Input Tidak Valid:\n" + errorMessages);
-      
       return Promise.reject(error);
     }
 
-    // --- 2. HANDLING ERROR 401 & 419 (AUTH & SESSION EXPIRED) ---
     if (res && (res.status === 401 || res.status === 419)) {
       const currentPath = window.location.pathname.toLowerCase();
-      
-      // Jangan tendang jika user memang sedang berada di halaman login
       if (!currentPath.includes('/login')) {
           localStorage.removeItem("access_token");
           localStorage.removeItem("user_data");
-          
-          // Mengarah ke rute login yang sesuai dengan navbar (/app/login)
           window.location.replace("/app/login?reason=session_expired");
       }
     }

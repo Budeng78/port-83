@@ -22,7 +22,7 @@ export default function PendingRegister({ isOpen, onClose, message }) {
 
                 {/* Pesan Dinamis dari Backend */}
                 <p className="text-slate-500 text-sm mb-6 leading-relaxed lowercase font-medium">
-                    {message || 'akun bapak masih menunggu persetujuan admin parjos. mohon bersabar ya pak!'}
+                    {message || 'akun bapak masih menunggu persetujuan admin prototype. mohon bersabar ya pak!'}
                 </p>
 
                 {/* Tombol Tutup */}
@@ -35,7 +35,7 @@ export default function PendingRegister({ isOpen, onClose, message }) {
                 
                 {/* Footer Kecil (Opsional) */}
                 <p className="mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                    project parjos system
+                    project prototype system
                 </p>
             </div>
         </div>

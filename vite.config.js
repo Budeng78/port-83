@@ -16,16 +16,21 @@ function getModuleInputs() {
         const modules = fs.readdirSync(modulesPath);
         
         modules.forEach(moduleName => {
-            const jsDir = path.join(modulesPath, moduleName, 'Resources/assets/js');
-            
-            if (fs.existsSync(jsDir)) {
-                const files = fs.readdirSync(jsDir);
-                
-                files.forEach(file => {
-                    if (/\.(js|jsx|ts|tsx)$/.test(file)) {
-                        inputs.push(`Modules/${moduleName}/Resources/assets/js/${file}`);
-                    }
-                });
+            if (moduleName === '.' || moduleName === '..') return;
+
+            const modulePath = path.join(modulesPath, moduleName);
+            if (!fs.statSync(modulePath).isDirectory()) return;
+
+            // 1. Cek keberadaan entry point JavaScript/React
+            const moduleAppPath = path.join(modulePath, 'Resources/js/app.jsx');
+            if (fs.existsSync(moduleAppPath)) {
+                inputs.push(`Modules/${moduleName}/Resources/js/app.jsx`);
+            }
+
+            // 2. Cek keberadaan file CSS khusus modul (jika ada)
+            const moduleCssPath = path.join(modulePath, 'Resources/css/app.css');
+            if (fs.existsSync(moduleCssPath)) {
+                inputs.push(`Modules/${moduleName}/Resources/css/app.css`);
             }
         });
     }
@@ -46,6 +51,12 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    resolve: {
+        alias: {
+            '@modules': path.resolve(import.meta.dirname, 'Modules'),
+            '@': path.resolve(import.meta.dirname, 'resources/js'),
+        },
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],

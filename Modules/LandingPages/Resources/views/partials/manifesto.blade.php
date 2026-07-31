@@ -2,7 +2,7 @@
     <div class="container mx-auto px-6 max-w-5xl">
         <div class="text-center mb-16">
             <h2 class="text-3xl font-bold tracking-tight mb-4">Manifesto Sistem</h2>
-            <p class="text-slate-400 max-w-xl mx-auto">Prinsip dasar perancangan arsitektur platform Parjos.</p>
+            <p class="text-slate-400 max-w-xl mx-auto">Prinsip dasar perancangan arsitektur platform prototype.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="p-8 rounded-2xl bg-slate-900 border border-slate-800">

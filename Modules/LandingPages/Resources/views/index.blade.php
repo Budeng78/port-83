@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ config('app.name', 'Parjos') }} - Landing Page</title>
+    <title>{{ config('app.name', 'prototype') }} - Landing Page</title>
     
     <!-- Memuat CSS utama via Vite -->
     @vite(['resources/css/app.css'])
@@ -45,7 +45,7 @@
 
     <!-- Footer -->
     <footer class="text-center py-6 text-slate-600 border-t border-slate-900 text-sm">
-        &copy; {{ date('Y') }} Parjos. All rights reserved.
+        &copy; {{ date('Y') }} prototype. All rights reserved.
     </footer>
 
 </body>
