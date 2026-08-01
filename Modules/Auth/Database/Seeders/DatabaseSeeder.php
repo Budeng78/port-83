@@ -1,0 +1,17 @@
+<?php
+
+namespace Modules\Auth\Database\Seeders;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $this->call([
+            \Modules\Auth\Database\Seeders\UserSeeder::class,
+            \Modules\Auth\Database\Seeders\RoleAndPermissionSeeder::class,
+            \Modules\Auth\Database\Seeders\MenuSeeder::class,
+        ]);
+    }
+}

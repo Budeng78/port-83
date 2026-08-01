@@ -136,8 +136,8 @@ export default function BottomNavbar() {
             <nav className="fixed bottom-6 left-6 right-6 z-[1000] md:hidden h-16">
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-2xl border border-white/50 rounded-[2.5rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)]" />
                 <div className="relative flex justify-around items-center h-full px-8">
-                    <NavLink to="/dashboard" className={({ isActive }) => `flex flex-col items-center transition-colors ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
-                        <Home size={20} strokeWidth={pathname === '/dashboard' ? 2.5 : 2} />
+                    <NavLink to="dashboard" className={({ isActive }) => `flex flex-col items-center transition-colors ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
+                        <Home size={20} strokeWidth={pathname === 'dashboard' ? 2.5 : 2} />
                     </NavLink>
 
                     <button 

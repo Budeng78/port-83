@@ -15,11 +15,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Panggil seeder dari Modul Auth secara otomatis di sini
+        $this->call([
+            \Modules\Auth\Database\Seeders\DatabaseSeeder::class,
+            \Modules\Core\Database\Seeders\DatabaseSeeder::class,
         ]);
     }
 }

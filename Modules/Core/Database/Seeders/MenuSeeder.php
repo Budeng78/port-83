@@ -7,15 +7,46 @@ use Modules\Core\Models\Menu;
 
 class MenuSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // Masukkan data menu awal di sini
-        Menu::create([
-            'title' => 'Dashboard',
-            'route' => '/dashboard',
-            'icon' => 'LayoutDashboard',
-            'order' => 1,
-            'is_active' => true,
-        ]);
+        $menus = [
+            [
+                'label' => 'Dashboard',
+                'path' => '/dashboard',
+                'icon' => 'LayoutDashboard',
+                'permission_name' => 'view-dashboard',
+                'parent_id' => null,
+                'order' => 1,
+                'is_active' => true,
+            ],
+            [
+                'label' => 'Manajemen Pengguna',
+                'path' => '/users',
+                'icon' => 'Users',
+                'permission_name' => 'view-users',
+                'parent_id' => null,
+                'order' => 2,
+                'is_active' => true,
+            ],
+            [
+                'label' => 'Peran & Hak Akses',
+                'path' => '/roles',
+                'icon' => 'ShieldCheck',
+                'permission_name' => 'view-roles',
+                'parent_id' => null,
+                'order' => 3,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($menus as $menu) {
+            Menu::firstOrCreate(
+                ['path' => $menu['path']],
+                $menu
+            );
+        }
     }
 }

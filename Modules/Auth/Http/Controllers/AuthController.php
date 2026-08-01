@@ -15,20 +15,31 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        // Validasi fleksibel: tidak membatasi nama field dari frontend, asal password wajib diisi
         $request->validate([
-            'no_whatsapp' => 'required|string', 
             'password' => 'required|string',
         ]);
 
-        $identity = $request->no_whatsapp;
+        // Tangkap input dari field apa saja yang dikirim oleh form React
+        $identity = $request->input('email') 
+            ?? $request->input('no_whatsapp') 
+            ?? $request->input('identity')
+            ?? $request->input('username');
 
+        if (! $identity) {
+            throw ValidationException::withMessages([
+                'email' => ['Kolom Email atau Nomor WhatsApp wajib diisi.'],
+            ]);
+        }
+
+        // Deteksi otomatis apakah input berupa email atau nomor WhatsApp
         $field = filter_var($identity, FILTER_VALIDATE_EMAIL) ? 'email' : 'no_whatsapp';
 
         $user = User::where($field, $identity)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'no_whatsapp' => ['Email/Nomor WhatsApp atau password yang diberikan salah.'],
+                'email' => ['Email/Nomor WhatsApp atau password yang diberikan salah.'],
             ]);
         }
 
@@ -38,7 +49,6 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Cek status aktif user jika ada kolom is_active
         if (isset($user->is_active) && $user->is_active === false) {
             return response()->json([
                 'message' => 'Akun Anda telah dinonaktifkan.'
@@ -50,7 +60,6 @@ class AuthController extends Controller
         $agreementRequired = false; 
         $latestTerm = null;
 
-        // Ubah user menjadi array dan sisipkan extra_permissions
         $userData = $user->toArray();
         $userData['extra_permissions'] = method_exists($user, 'getAllPermissions') 
             ? $user->getAllPermissions()->pluck('name') 

@@ -7,7 +7,7 @@
     
     <!-- Vite Refresh & Aset di dalam Modul Dashboard -->
     @viteReactRefresh
-    @vite(['Modules/Auth/Resources/css/app.css', 'Modules/Auth/Resources/js/app.jsx'])
+    @vite(['Modules/Core/Resources/css/app.css', 'Modules/Core/Resources/js/app.jsx'])
 </head>
 <body class="bg-slate-50 font-['Instrument_Sans']">
     

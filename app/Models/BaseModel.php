@@ -3,16 +3,17 @@
 namespace App\Models;
 
 use App\Traits\Blameable;
-use App\Traits\HasUuid7;
+
 use App\Traits\Searchable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
 abstract class BaseModel extends Model
 {
-    use HasUuid7, Blameable, Searchable, SoftDeletes, LogsActivity;
+    use HasUuids, Blameable, Searchable, SoftDeletes, LogsActivity;
 
     /**
      * Konfigurasi standar untuk Spatie Activity Log (Audit Trail ISO 27001).

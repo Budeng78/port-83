@@ -13,27 +13,15 @@ return new class extends Migration
     {
         Schema::create('menus', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            
-            // Relasi Hierarki Menu (Parent-Child)
-            $table->uuid('parent_id')->nullable();
-            $table->foreign('parent_id')->references('id')->on('menus')->onDelete('cascade');
-
-            // Atribut Utama Menu
-            $table->string('title');
-            $table->string('route');
+            $table->string('label');
+            $table->string('path')->nullable(); // <-- Pastikan baris ini ada
             $table->string('icon')->nullable();
             $table->string('permission_name')->nullable();
+            $table->uuid('parent_id')->nullable();
             $table->integer('order')->default(0);
             $table->boolean('is_active')->default(true);
-
-            // Standard Timestamps & Soft Deletes
             $table->timestamps();
-            $table->softDeletes();
-
-            // Blameable Columns
-            $table->uuid('created_by')->nullable();
-            $table->uuid('updated_by')->nullable();
-            $table->uuid('deleted_by')->nullable();
+            $table->softDeletes(); // <-- Tambahkan jika model Menu menggunakan SoftDeletes
         });
     }
 

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import api, { csrf } from '../axios/axios';
-import AgreementModalLogin from "../components/modal/AgreementModalLogin";
-import PendingRegister from "../components/modal/PendingRegister";
+
+//import AgreementModalLogin from "../components/modal/AgreementModalLogin";
+//import PendingRegister from "../components/modal/PendingRegister";
 
 export default function Login() {
     // State Management
@@ -26,7 +27,7 @@ export default function Login() {
                 await csrf();
             }
             
-            const res = await api.post('/auth/login', { 
+            const res = await api.post('/app/login', { 
                 no_whatsapp: noWhatsapp, 
                 password 
             });
@@ -155,7 +156,7 @@ export default function Login() {
             </div>
 
             {/* Modal Update Kebijakan */}
-            <AgreementModalLogin
+{/*            <AgreementModalLogin
                 isOpen={showAgreement} 
                 termData={latestTerm} 
                 userDetails={{ 
@@ -167,12 +168,12 @@ export default function Login() {
             />
 
             {/* Modal Pending */}
-            <PendingRegister
+{/*             <PendingRegister
                 isOpen={isPendingModalOpen}
                 onClose={() => setIsPendingModalOpen(false)}
                 message={pendingMessage}
             />
-
+*/}
             <style>{`
                 .input-prototype-light {
                     width: 100%; padding: 1rem 1.25rem; background-color: #f8fafc;
@@ -181,6 +182,8 @@ export default function Login() {
                 .input-prototype-light::placeholder { color: #94a3b8; }
                 .input-prototype-light:focus { background-color: #ffffff; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
             `}</style>
+
+            
         </div>
     );
 }

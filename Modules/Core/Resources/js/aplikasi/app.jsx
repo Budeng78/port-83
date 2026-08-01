@@ -1,31 +1,46 @@
 import './bootstrap';
-import '../../../../resources/css/app.css'; 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@modules/Auth/Resources/js/aplikasi/context/AuthContext';
 
-// Import komponen layout utama atau router aplikasi Anda di sini
-// Contoh: import AppRoutes from './routes/AppRoutes';
+// Import Layout dan Halaman (sesuaikan path relatifnya dari folder Core/Resources/js)
+import DefaultLayout from '@modules/Core/Resources/js/aplikasi/templates/layouts/DefaultLayout';
+import Dashboard from '@modules/Dashboard/Resources/js/aplikasi/pages/Dashboard';
 
-export default function MainApp() {
+// Definisikan Router Utama Core
+const router = createBrowserRouter([
+    {
+        path: '/',
+        element: <Navigate to="/app/dashboard" replace />
+    },
+    {
+        path: '/app',
+        element: <DefaultLayout />,
+        children: [
+            {
+                path: 'dashboard',
+                element: <Dashboard />
+            }
+        ]
+    }
+]);
+
+export default function App() { // Ubah menjadi huruf kapital (App)
     return (
-        <div className="min-h-screen bg-slate-100 flex flex-col">
-            {/* Tempatkan router atau layout utama aplikasi */}
-        </div>
+        <AuthProvider>
+            <RouterProvider router={router} />
+        </AuthProvider>
     );
 }
 
+// Mount ke elemen ID 'app' yang ada di Blade Core
 const container = document.getElementById('app');
 if (container) {
     const root = createRoot(container);
     root.render(
         <React.StrictMode>
-            <BrowserRouter basename="/app">
-                <AuthProvider>
-                    <MainApp />
-                </AuthProvider>
-            </BrowserRouter>
+            <App /> {/* Panggil komponen dengan huruf kapital */}
         </React.StrictMode>
     );
 }

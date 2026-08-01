@@ -3,61 +3,43 @@
 namespace Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
-use Modules\Core\Models\Menu;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    /**
-     * Ambil daftar menu dinamis berdasarkan akses user secara rekursif.
-     */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        // Ambil menu utama (parent_id null) yang aktif, diurutkan berdasarkan 'order'
-        $menus = Menu::with('children')
-            ->whereNull('parent_id')
-            ->where('is_active', true)
-            ->orderBy('order', 'asc')
-            ->get();
+            // Antisipasi jika token tidak valid atau sesi habis
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.'
+                ], 401);
+            }
 
-        // Transformasi menggunakan helper rekursif
-        $formattedMenus = $menus->map(fn($menu) => $this->transformMenu($menu, $user))
-            ->filter()
-            ->values();
+            // Contoh data menu (sesuaikan dengan tabel database Anda nantinya)
+            $menus = [
+                [
+                    'title' => 'Dashboard Utama',
+                    'path' => '/app/dashboard',
+                    'icon' => 'Home'
+                ]
+            ];
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $formattedMenus
-        ]);
-    }
+            return response()->json([
+                'success' => true,
+                'data' => $menus
+            ], 200);
 
-    /**
-     * Helper rekursif untuk mentransformasi menu beserta anak/cucunya.
-     */
-    private function transformMenu($menu, $user): ?array
-    {
-        // Cek permission jika didefinisikan
-        if ($menu->permission_name && $user && !$user->can($menu->permission_name)) {
-            return null;
+        } catch (\Exception $e) {
+            // Mengembalikan pesan error spesifik untuk debugging
+            return response()->json([
+                'success' => false,
+                'message' => 'Server Error: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Transformasi children secara rekursif
-        $children = $menu->children
-            ->where('is_active', true)
-            ->sortBy('order')
-            ->map(fn($child) => $this->transformMenu($child, $user))
-            ->filter()
-            ->values();
-
-        return [
-            'label' => $menu->title,
-            'path' => $menu->route,
-            'icon' => $menu->icon, // Berisi string nama icon, misal: "Package", "Users", dll.
-            'permission' => $menu->permission_name,
-            'children' => $children->isNotEmpty() ? $children : []
-        ];
     }
 }

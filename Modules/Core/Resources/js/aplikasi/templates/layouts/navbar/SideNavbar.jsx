@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown} from 'lucide-react';
 import api from '@modules/Auth/Resources/js/aplikasi/axios/axios.js'; // <-- PERBAIKAN 1: Gunakan instance kustom 'api', bukan 'axios' mentah
 import { useAuth } from '@modules/Auth/Resources/js/aplikasi/context/AuthContext';
 import { DynamicIcon } from '../DynamicIcon';
@@ -126,10 +126,7 @@ export default function SideNavbar({ isCollapsed, setIsCollapsed }) {
 
             <div className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
-                    <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-                        <Home size={18} />
-                        {!isCollapsed && <span className="font-bold text-[13px]">Dashboard</span>}
-                    </NavLink>
+                    
                 </div>
 
                 <div className="space-y-1">

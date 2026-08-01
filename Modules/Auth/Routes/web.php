@@ -3,13 +3,16 @@
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('app')->group(function () {
-    // Menangkap rute login dan sub-rutenya untuk dikelola React Router
-    Route::get('/login/{any?}', function () {
+    // Rute login dengan nama agar middleware auth Laravel berfungsi
+    Route::get('/login', function () {
         return view('auth::app');
-    })->where('any', '.*')->name('login');
-
-    // Menangkap rute register jika dipisah
-    Route::get('/register/{any?}', function () {
+    })->name('login');
+    Route::get('/dashboard', function () {
+        // Sesuaikan dengan view dari modul dashboard Anda (contoh: dashboard::app atau dashboard::index)
+        return view('dashboard::app'); 
+    });
+    // Menangkap semua sisa rute di bawah /app/* ke React Router
+    Route::get('/{any?}', function () {
         return view('auth::app');
     })->where('any', '.*');
 });
