@@ -20,6 +20,20 @@ return Application::configure(basePath: dirname(__DIR__))
                     
                     $modulePath = $modulesPath . '/' . $module;
                     if (is_dir($modulePath)) {
+                        // Cek status aktif modul melalui module.json
+                        $moduleJsonPath = $modulePath . '/module.json';
+                        $isActive = true;
+
+                        if (file_exists($moduleJsonPath)) {
+                            $manifest = json_decode(file_get_contents($moduleJsonPath), true);
+                            $isActive = $manifest['is_active'] ?? true;
+                        }
+
+                        // Jika modul dinonaktifkan, lewati pemuatan rute
+                        if (!$isActive) {
+                            continue;
+                        }
+
                         // 1. Muat Web Route
                         $webRoutePath = $modulePath . '/Routes/web.php';
                         if (file_exists($webRoutePath)) {

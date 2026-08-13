@@ -1,6 +1,6 @@
 //Modules/Auth/Resources/js/aplikasi/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../axios/axios.js';
+import api from '@Modules/System/Resources/js/aplikasi/axios/axios.js';
 
 export const AuthContext = createContext({});
 

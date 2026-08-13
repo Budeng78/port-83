@@ -1,65 +1,208 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'fs';
 import path from 'path';
 
-/**
- * Fungsi untuk memindai entry point secara dinamis di dalam folder Modules
- */
+/*
+|--------------------------------------------------------------------------
+| Dynamic Module Inputs
+|--------------------------------------------------------------------------
+|
+| Mendeteksi entry point JS dan CSS dari setiap module.
+|
+| Convention:
+|
+| Modules/{Module}/Resources/js/app.jsx
+| Modules/{Module}/Resources/css/app.css
+|
+*/
+
 function getModuleInputs() {
-    const inputs = ['resources/css/app.css', 'resources/js/app.js'];
-    const modulesPath = path.resolve(__dirname, 'Modules');
 
-    if (fs.existsSync(modulesPath)) {
-        const modules = fs.readdirSync(modulesPath);
-        
-        modules.forEach(moduleName => {
-            if (moduleName === '.' || moduleName === '..') return;
+    const inputs = [
+        'resources/css/app.css',
+        'resources/js/app.js',
+    ];
 
-            const modulePath = path.join(modulesPath, moduleName);
-            if (!fs.statSync(modulePath).isDirectory()) return;
+    const modulesPath = path.resolve(
+        import.meta.dirname,
+        'Modules'
+    );
 
-            // 1. Cek keberadaan entry point JavaScript/React
-            const moduleAppPath = path.join(modulePath, 'Resources/js/app.jsx');
-            if (fs.existsSync(moduleAppPath)) {
-                inputs.push(`Modules/${moduleName}/Resources/js/app.jsx`);
-            }
+    /*
+    |--------------------------------------------------------------------------
+    | Jika folder Modules tidak ada
+    |--------------------------------------------------------------------------
+    */
 
-            // 2. Cek keberadaan file CSS khusus modul (jika ada)
-            const moduleCssPath = path.join(modulePath, 'Resources/css/app.css');
-            if (fs.existsSync(moduleCssPath)) {
-                inputs.push(`Modules/${moduleName}/Resources/css/app.css`);
-            }
-        });
+    if (!fs.existsSync(modulesPath)) {
+        return inputs;
     }
+
+    const modules = fs.readdirSync(modulesPath);
+
+    modules.forEach((moduleName) => {
+
+        const modulePath = path.join(
+            modulesPath,
+            moduleName
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pastikan benar-benar directory
+        |--------------------------------------------------------------------------
+        */
+
+        if (!fs.statSync(modulePath).isDirectory()) {
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Module React Entry
+        |--------------------------------------------------------------------------
+        |
+        | Contoh:
+        |
+        | Modules/System/Resources/js/app.jsx
+        | Modules/Auth/Resources/js/app.jsx
+        |
+        */
+
+        const moduleJsPath = path.join(
+            modulePath,
+            'Resources/js/app.jsx'
+        );
+
+        if (fs.existsSync(moduleJsPath)) {
+
+            inputs.push(
+                `Modules/${moduleName}/Resources/js/app.jsx`
+            );
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Module CSS Entry
+        |--------------------------------------------------------------------------
+        |
+        | Contoh:
+        |
+        | Modules/System/Resources/css/app.css
+        | Modules/Dashboard/Resources/css/app.css
+        |
+        */
+
+        const moduleCssPath = path.join(
+            modulePath,
+            'Resources/css/app.css'
+        );
+
+        if (fs.existsSync(moduleCssPath)) {
+
+            inputs.push(
+                `Modules/${moduleName}/Resources/css/app.css`
+            );
+
+        }
+
+    });
 
     return inputs;
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Vite Configuration
+|--------------------------------------------------------------------------
+*/
+
 export default defineConfig({
+
     plugins: [
+
+        /*
+        |--------------------------------------------------------------------------
+        | Laravel Vite
+        |--------------------------------------------------------------------------
+        */
+
         laravel({
             input: getModuleInputs(),
             refresh: true,
-            fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
-            ],
         }),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tailwind CSS v4
+        |--------------------------------------------------------------------------
+        */
+
         tailwindcss(),
+
     ],
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Path Alias
+    |--------------------------------------------------------------------------
+    */
+
     resolve: {
+
         alias: {
-            '@modules': path.resolve(import.meta.dirname, 'Modules'),
-            '@': path.resolve(import.meta.dirname, 'resources/js'),
+
+            '@Modules': path.resolve(
+                import.meta.dirname,
+                'Modules'
+            ),
+
+            '@': path.resolve(
+                import.meta.dirname,
+                'resources/js'
+            ),
+
         },
+
     },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Development Server
+    |--------------------------------------------------------------------------
+    */
+
     server: {
+
         watch: {
-            ignored: ['**/storage/framework/views/**'],
+
+            ignored: [
+                '**/storage/framework/views/**',
+            ],
+
         },
+
+        /*
+        |--------------------------------------------------------------------------
+        | Development dari komputer lain
+        |--------------------------------------------------------------------------
+        |
+        | Aktifkan jika diperlukan:
+        |
+        | host: '0.0.0.0',
+        | port: 5173,
+        |
+        */
+
+        // host: '0.0.0.0',
+        // port: 5173,
+
     },
+
 });

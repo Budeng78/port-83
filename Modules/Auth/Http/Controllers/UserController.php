@@ -3,84 +3,112 @@
 namespace Modules\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Modules\Auth\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Auth\Http\Requests\StoreUserRequest;
+use Modules\Auth\Http\Requests\UpdateUserRequest;
+use Modules\Auth\Models\User;
+use Modules\Auth\Services\UserService;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        protected UserService $userService
+    ) {
+    }
+
+
+    /**
+     * =====================================================
+     * GET /api/users
+     * =====================================================
+     */
+    public function index(Request $request): JsonResponse
     {
-        $keyword = $request->get('search');
-        
-        $users = User::search($keyword, ['name', 'email', 'no_whatsapp'])
-            ->paginate(10);
+        $users = $this->userService->getUsers(
+            search: $request->input('search'),
+            perPage: (int) $request->input('per_page', 10)
+        );
 
         return response()->json([
             'status' => 'success',
-            'data' => $users
+            'data' => $users,
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'no_whatsapp' => 'nullable|string|max:20',
-        ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
-            'no_whatsapp' => $validated['no_whatsapp'] ?? null,
-        ]);
+    /**
+     * =====================================================
+     * POST /api/users
+     * =====================================================
+     */
+    public function store(
+        StoreUserRequest $request
+    ): JsonResponse {
+
+        $user = $this->userService->createUser(
+            $request->validated()
+        );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User berhasil ditambahkan',
-            'data' => $user
+            'message' => 'User berhasil ditambahkan.',
+            'data' => $user,
         ], 201);
     }
 
-    public function show($id)
+
+    /**
+     * =====================================================
+     * GET /api/users/{user}
+     * =====================================================
+     */
+    public function show(User $user): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = $this->userService->getUser($user);
 
         return response()->json([
             'status' => 'success',
-            'data' => $user
+            'data' => $user,
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
-        $user = User::findOrFail($id);
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $id,
-            'no_whatsapp' => 'nullable|string|max:20',
-        ]);
+    /**
+     * =====================================================
+     * PUT/PATCH /api/users/{user}
+     * =====================================================
+     */
+    public function update(
+        UpdateUserRequest $request,
+        User $user
+    ): JsonResponse {
 
-        $user->update($validated);
+        $user = $this->userService->updateUser(
+            $user,
+            $request->validated()
+        );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User berhasil diperbarui',
-            'data' => $user
+            'message' => 'User berhasil diperbarui.',
+            'data' => $user,
         ]);
     }
 
-    public function destroy($id)
+
+    /**
+     * =====================================================
+     * DELETE /api/users/{user}
+     * =====================================================
+     */
+    public function destroy(User $user): JsonResponse
     {
-        $user = User::findOrFail($id);
-        $user->delete();
+        $this->userService->deleteUser($user);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User berhasil dihapus'
+            'message' => 'User berhasil dihapus.',
         ]);
     }
 }

@@ -1,13 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@modules/Auth/Resources/js/aplikasi/context/AuthContext';
+import { AuthProvider } from '@Modules/Auth/Resources/js/aplikasi/context/AuthContext';
 
-// Menggunakan alias @modules agar konsisten dan bersih
-import DefaultLayout from '@modules/Core/Resources/js/aplikasi/templates/layouts/DefaultLayout';
+// Import Layout Utama dari Modul Core
+import DefaultLayout from '@Modules/System/Resources/js/aplikasi/templates/layouts/DefaultLayout';
 
-// Mengambil Halaman Dashboard dari folder aplikasi
-import Dashboard from './aplikasi/pages/Dashboard';
+// Import Kumpulan Rute Dashboard
+import { dashboardRoutes } from './routes';
+
+// Komponen Gembok Pengaman
+const ProtectedRoute = ({ children }) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/app/login';
+        return null;
+    }
+    return children;
+};
 
 const router = createBrowserRouter([
     {
@@ -16,13 +26,12 @@ const router = createBrowserRouter([
     },
     {
         path: '/app',
-        element: <DefaultLayout />,
-        children: [
-            {
-                path: 'dashboard',
-                element: <Dashboard />
-            }
-        ]
+        element: (
+            <ProtectedRoute>
+                <DefaultLayout />
+            </ProtectedRoute>
+        ),
+        children: dashboardRoutes
     }
 ]);
 
@@ -35,5 +44,9 @@ export default function App() {
 }
 
 if (document.getElementById('app')) {
-    ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+    ReactDOM.createRoot(document.getElementById('app')).render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    );
 }

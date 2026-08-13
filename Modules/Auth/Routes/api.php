@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 use Modules\Auth\Http\Controllers\UserController;
-use Modules\Auth\Http\Controllers\RoleController;
-use Modules\Auth\Http\Controllers\PermissionController;
-use Modules\Auth\Http\Controllers\MatrixController;
+use Modules\RBAC\Http\Controllers\RoleController;
+use Modules\RBAC\Http\Controllers\PermissionController;
+use Modules\RBAC\Http\Controllers\MatrixController;
 
 // Public routes (Login)
 Route::prefix('app')->group(function () {
@@ -17,13 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth actions
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
-
-    // User Management inside Auth module
-    Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'store']);
-    Route::get('/users/{id}', [UserController::class, 'show']);
-    Route::put('/users/{id}', [UserController::class, 'update']);
-    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    
+    Route::apiResource('users', UserController::class);
 
     // Role & Permission Management
     Route::apiResource('roles', RoleController::class);

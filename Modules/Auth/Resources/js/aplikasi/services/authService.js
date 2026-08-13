@@ -1,4 +1,4 @@
-import api from '@modules/Auth/Resources/js/aplikasi/axios/axios.js'; // Menggunakan instance api yang sudah Anda buat
+import api from '@Modules/System/Resources/js/aplikasi/axios/axios.js'; // Menggunakan instance api yang sudah Anda buat
 
 export const authService = {
     // Roles

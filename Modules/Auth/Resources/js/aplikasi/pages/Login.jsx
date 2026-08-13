@@ -1,194 +1,654 @@
 import React, { useState } from 'react';
+import { useNavigate, BrowserRouter } from 'react-router-dom';
 import ReactDOM from 'react-dom/client';
-import api, { csrf } from '../axios/axios';
+import { LogIn, ArrowLeft, Loader2 } from 'lucide-react';
 
-//import AgreementModalLogin from "../components/modal/AgreementModalLogin";
-//import PendingRegister from "../components/modal/PendingRegister";
+import api, { csrf } from "@Modules/System/Resources/js/aplikasi/axios/axios";
+
+// import AgreementModalLogin from "../components/modal/AgreementModalLogin";
+// import PendingRegister from "../components/modal/PendingRegister";
+
 
 export default function Login() {
-    // State Management
+
+    const navigate = useNavigate();
+
+    // =====================================================
+    // STATE
+    // =====================================================
+
     const [loading, setLoading] = useState(false);
+
     const [showAgreement, setShowAgreement] = useState(false);
     const [latestTerm, setLatestTerm] = useState(null);
     const [userTemp, setUserTemp] = useState(null);
-    
+
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     const [pendingMessage, setPendingMessage] = useState('');
 
     const [noWhatsapp, setNoWhatsapp] = useState('');
     const [password, setPassword] = useState('');
 
+
+    // =====================================================
+    // LOGIN
+    // =====================================================
+
     const handleLogin = async (e) => {
+
         e.preventDefault();
         setLoading(true);
 
         try {
+
+            // -------------------------------------------------
+            // CSRF
+            // -------------------------------------------------
+
             if (typeof csrf === 'function') {
                 await csrf();
             }
-            
-            const res = await api.post('/app/login', { 
-                no_whatsapp: noWhatsapp, 
-                password 
+
+
+            // -------------------------------------------------
+            // LOGIN API
+            // -------------------------------------------------
+
+            const res = await api.post('/app/login', {
+                identity: noWhatsapp,
+                password,
             });
-            
-            const { user, access_token, agreement_required, latest_term } = res.data;
+
+
+            const {
+                user,
+                access_token,
+                agreement_required,
+                latest_term,
+            } = res.data;
+
+
+            // -------------------------------------------------
+            // AGREEMENT REQUIRED
+            // -------------------------------------------------
 
             if (agreement_required) {
+
                 setLatestTerm(latest_term);
                 setUserTemp(user);
-                localStorage.setItem('temp_token', access_token);
+
+                localStorage.setItem(
+                    'temp_token',
+                    access_token
+                );
+
                 setShowAgreement(true);
                 setLoading(false);
+
                 return;
             }
 
-            localStorage.setItem('access_token', access_token);
-            //Sementara saja == untuk menangani logika setelah login
-            alert("Login Berhasil! Token tersimpan. Selamat datang, " + (user?.name || 'Pengguna'));
-            window.location.href = '/app/dashboard';
 
-        } catch (err) {
-            if (err.response && err.response.status === 403) {
-                setPendingMessage(err.response.data.message); 
-                setIsPendingModalOpen(true);
-            } else {
-                console.error("error login:", err.response?.data);
-                alert(err.response?.data?.message || "Login gagal, periksa kredensial bapak.");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+            // -------------------------------------------------
+            // LOGIN SUCCESS
+            // -------------------------------------------------
 
-    const handleAgreementSuccess = async () => {
-        setLoading(true);
-        const tempToken = localStorage.getItem('temp_token');
-
-        try {
-            await api.post('/user/legal-consent', 
-                { 
-                    term_id: latestTerm.id,
-                    identity: noWhatsapp 
-                }, 
-                { headers: { Authorization: `Bearer ${tempToken}` } }
+            localStorage.setItem(
+                'access_token',
+                access_token
             );
 
-            setShowAgreement(false);
-            localStorage.removeItem('temp_token'); 
-            alert("Terima kasih pak " + (userTemp?.name || '') + ", persetujuan telah dicatat. Silakan login kembali.");
-            
-            setNoWhatsapp('');
-            setPassword('');
+            alert(
+                "Login Berhasil! Selamat datang, " +
+                (user?.name || 'Pengguna')
+            );
+
+            window.location.href = '/app/dashboard';
+
+            // navigate('/dashboard');
+
         } catch (err) {
-            console.error("gagal simpan consent:", err.response?.data);
-            alert("Gagal mencatat persetujuan, silakan coba lagi pak.");
+
+            if (err.response?.status === 403) {
+
+                setPendingMessage(
+                    err.response.data.message
+                );
+
+                setIsPendingModalOpen(true);
+
+            } else {
+
+                console.error(
+                    "error login:",
+                    err.response?.data
+                );
+
+                alert(
+                    err.response?.data?.message ||
+                    "Login gagal, periksa kredensial bapak."
+                );
+            }
+
         } finally {
+
             setLoading(false);
         }
     };
 
+
+    // =====================================================
+    // AGREEMENT SUCCESS
+    // =====================================================
+
+    const handleAgreementSuccess = async () => {
+
+        setLoading(true);
+
+        const tempToken =
+            localStorage.getItem('temp_token');
+
+
+        try {
+
+            await api.post(
+                '/user/legal-consent',
+                {
+                    term_id: latestTerm.id,
+                    identity: noWhatsapp,
+                },
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${tempToken}`,
+                    },
+                }
+            );
+
+
+            setShowAgreement(false);
+
+            localStorage.removeItem(
+                'temp_token'
+            );
+
+
+            alert(
+                "Terima kasih pak " +
+                (userTemp?.name || '') +
+                ", persetujuan telah dicatat. Silakan login kembali."
+            );
+
+
+            setNoWhatsapp('');
+            setPassword('');
+
+        } catch (err) {
+
+            console.error(
+                "gagal simpan consent:",
+                err.response?.data
+            );
+
+            alert(
+                "Gagal mencatat persetujuan, silakan coba lagi pak."
+            );
+
+        } finally {
+
+            setLoading(false);
+        }
+    };
+
+
+    // =====================================================
+    // RENDER
+    // =====================================================
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 font-['Instrument_Sans'] relative w-full overflow-hidden">
-            <div className="relative w-full max-w-[420px] z-10">
+
+        <div className="
+            min-h-screen
+            flex
+            items-center
+            justify-center
+            bg-slate-50
+            px-4
+            py-8
+            relative
+            overflow-hidden
+        ">
+
+
+            {/* =================================================
+                BACKGROUND DECORATION
+            ================================================= */}
+
+            <div className="
+                absolute
+                -top-32
+                -right-32
+                w-96
+                h-96
+                rounded-full
+                bg-blue-600/10
+                blur-3xl
+            " />
+
+            <div className="
+                absolute
+                -bottom-40
+                -left-40
+                w-[30rem]
+                h-[30rem]
+                rounded-full
+                bg-indigo-900/10
+                blur-3xl
+            " />
+
+
+            {/* =================================================
+                LOGIN CONTAINER
+            ================================================= */}
+
+            <div className="
+                relative
+                z-10
+                w-full
+                max-w-md
+            ">
+
+
+                {/* =================================================
+                    BRAND
+                ================================================= */}
+
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/20 text-white text-2xl font-bold mb-4 italic transition-transform hover:scale-110 duration-300">SWI</div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight italic">Portal Login</h1>
-                    <p className="text-slate-400 text-sm mt-2 font-medium italic uppercase tracking-widest">Node Primary PT SWI</p>
+
+                    {/* Logo */}
+
+                    <div className="
+                        inline-flex
+                        items-center
+                        justify-center
+                        w-16
+                        h-16
+                        rounded-2xl
+                        bg-gradient-to-br
+                        from-[#081a4d]
+                        via-[#1e3a8a]
+                        to-[#2563eb]
+                        text-white
+                        shadow-xl
+                        shadow-blue-900/20
+                        mb-5
+                    ">
+
+                        <span className="
+                            text-xl
+                            font-extrabold
+                            tracking-tight
+                        ">
+                            SWI
+                        </span>
+
+                    </div>
+
+
+                    {/* Title */}
+
+                    <h1 className="
+                        text-3xl
+                        font-extrabold
+                        tracking-tight
+                        text-slate-900
+                    ">
+                        Portal Login
+                    </h1>
+
+
+                    {/* Subtitle */}
+
+                    <p className="
+                        mt-2
+                        text-xs
+                        font-semibold
+                        text-slate-400
+                        uppercase
+                        tracking-[0.18em]
+                    ">
+                        Node Primary PT Sukun Wartono Indonesia
+                    </p>
+
                 </div>
 
-                {/* Card Putih Bersih dengan Bayangan Lembut */}
-                <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-2xl shadow-slate-200/60">
-                    <form onSubmit={handleLogin} className="space-y-5">
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-slate-600 ml-1 tracking-wider">Email atau Whatsapp</label>
-                            <input 
-                                type="text" 
+
+                {/* =================================================
+                    LOGIN CARD
+                ================================================= */}
+
+                <div className="
+                    bg-white
+                    border
+                    border-slate-200/80
+                    rounded-3xl
+                    p-7
+                    sm:p-8
+                    shadow-xl
+                    shadow-slate-200/60
+                ">
+
+
+                    {/* =================================================
+                        FORM
+                    ================================================= */}
+
+                    <form
+                        onSubmit={handleLogin}
+                        className="space-y-5"
+                    >
+
+
+                        {/* =================================================
+                            IDENTITY
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                block
+                                mb-2
+                                ml-1
+                                text-xs
+                                font-semibold
+                                text-slate-600
+                            ">
+                                Email atau WhatsApp
+                            </label>
+
+
+                            <input
+                                type="text"
                                 name="no_whatsapp"
                                 autoComplete="username"
                                 value={noWhatsapp}
-                                onChange={(e) => setNoWhatsapp(e.target.value)} 
-                                className="input-prototype-light" 
-                                placeholder="email@email.com / 0812345678" 
-                                required 
+                                onChange={(e) =>
+                                    setNoWhatsapp(e.target.value)
+                                }
+                                className="
+                                    w-full
+                                    h-12
+                                    px-4
+                                    rounded-xl
+                                    bg-slate-50
+                                    border
+                                    border-slate-200
+                                    text-sm
+                                    font-medium
+                                    text-slate-800
+                                    placeholder:text-slate-400
+                                    outline-none
+                                    transition-all
+                                    focus:bg-white
+                                    focus:border-blue-500
+                                    focus:ring-4
+                                    focus:ring-blue-500/10
+                                "
+                                placeholder="email@email.com / 0812345678"
+                                required
                             />
+
                         </div>
 
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-slate-600 ml-1 tracking-wider">Password</label>
-                            <input 
-                                type="password" 
+
+                        {/* =================================================
+                            PASSWORD
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                block
+                                mb-2
+                                ml-1
+                                text-xs
+                                font-semibold
+                                text-slate-600
+                            ">
+                                Password
+                            </label>
+
+
+                            <input
+                                type="password"
                                 name="password"
                                 autoComplete="current-password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)} 
-                                className="input-prototype-light" 
-                                placeholder="••••••••" 
-                                required 
+                                onChange={(e) =>
+                                    setPassword(e.target.value)
+                                }
+                                className="
+                                    w-full
+                                    h-12
+                                    px-4
+                                    rounded-xl
+                                    bg-slate-50
+                                    border
+                                    border-slate-200
+                                    text-sm
+                                    font-medium
+                                    text-slate-800
+                                    placeholder:text-slate-400
+                                    outline-none
+                                    transition-all
+                                    focus:bg-white
+                                    focus:border-blue-500
+                                    focus:ring-4
+                                    focus:ring-blue-500/10
+                                "
+                                placeholder="••••••••"
+                                required
                             />
+
                         </div>
 
-                        <button 
-                            disabled={loading} 
+
+                        {/* =================================================
+                            LOGIN BUTTON
+                        ================================================= */}
+
+                        <button
                             type="submit"
-                            className={`w-full py-4 mt-2 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            disabled={loading}
+                            className="
+                                w-full
+                                h-12
+                                mt-2
+                                rounded-xl
+                                bg-gradient-to-r
+                                from-[#081a4d]
+                                via-[#1e3a8a]
+                                to-[#2563eb]
+                                text-white
+                                text-sm
+                                font-bold
+                                shadow-lg
+                                shadow-blue-900/20
+                                transition-all
+                                hover:shadow-xl
+                                hover:-translate-y-0.5
+                                active:translate-y-0
+                                disabled:opacity-60
+                                disabled:cursor-not-allowed
+                                flex
+                                items-center
+                                justify-center
+                                gap-2
+                            "
                         >
+
                             {loading ? (
+
                                 <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    <span className="uppercase tracking-widest text-[12px]">Memverifikasi...</span>
+                                    <Loader2
+                                        size={18}
+                                        className="animate-spin"
+                                    />
+
+                                    <span>
+                                        Memverifikasi...
+                                    </span>
                                 </>
-                            ) : <span className="uppercase tracking-widest text-[12px]">Masuk ke Sistem</span>}
+
+                            ) : (
+
+                                <>
+                                    <LogIn size={18} />
+
+                                    <span>
+                                        Masuk ke Sistem
+                                    </span>
+                                </>
+
+                            )}
+
                         </button>
+
                     </form>
 
-                    <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm">
-                        <span className="text-slate-500 font-medium">belum punya akun?</span>{' '}
-                        <a href="/register" className="text-blue-600 font-bold hover:underline">daftar sekarang</a>
+
+                    {/* =================================================
+                        REGISTER
+                    ================================================= */}
+
+                    <div className="
+                        mt-7
+                        pt-6
+                        border-t
+                        border-slate-100
+                        text-center
+                    ">
+
+                        <span className="
+                            text-sm
+                            text-slate-500
+                        ">
+                            Belum punya akun?
+                        </span>
+
+                        {' '}
+
+                        <a
+                            href="/register"
+                            className="
+                                text-sm
+                                font-bold
+                                text-blue-600
+                                hover:text-blue-700
+                                transition-colors
+                            "
+                        >
+                            Daftar sekarang
+                        </a>
+
                     </div>
 
-                    <div className="mt-4 text-center text-sm">
-                        <a href="/" className="text-slate-400 font-medium hover:text-blue-600 transition">
-                            &larr; kembali ke halaman utama
+
+                    {/* =================================================
+                        BACK TO LANDING
+                    ================================================= */}
+
+                    <div className="mt-5 text-center">
+
+                        <a
+                            href="/"
+                            className="
+                                inline-flex
+                                items-center
+                                gap-1.5
+                                text-xs
+                                font-semibold
+                                text-slate-400
+                                hover:text-blue-600
+                                transition-colors
+                            "
+                        >
+
+                            <ArrowLeft size={14} />
+
+                            Kembali ke halaman utama
+
                         </a>
+
                     </div>
+
                 </div>
+
+
+                {/* =================================================
+                    FOOTER
+                ================================================= */}
+
+                <div className="
+                    mt-6
+                    text-center
+                    text-[11px]
+                    text-slate-400
+                ">
+                    PT Sukun Wartono Indonesia
+                </div>
+
             </div>
 
-            {/* Modal Update Kebijakan */}
-{/*            <AgreementModalLogin
-                isOpen={showAgreement} 
-                termData={latestTerm} 
-                userDetails={{ 
-                    name: userTemp?.name, 
-                    no_whatsapp: userTemp?.no_whatsapp 
+
+            {/* =================================================
+                AGREEMENT MODAL
+            ================================================= */}
+
+            {/*
+            <AgreementModalLogin
+                isOpen={showAgreement}
+                termData={latestTerm}
+                userDetails={{
+                    name: userTemp?.name,
+                    no_whatsapp: userTemp?.no_whatsapp
                 }}
                 loading={loading}
-                onSuccess={handleAgreementSuccess} 
+                onSuccess={handleAgreementSuccess}
             />
+            */}
 
-            {/* Modal Pending */}
-{/*             <PendingRegister
+
+            {/* =================================================
+                PENDING MODAL
+            ================================================= */}
+
+            {/*
+            <PendingRegister
                 isOpen={isPendingModalOpen}
                 onClose={() => setIsPendingModalOpen(false)}
                 message={pendingMessage}
             />
-*/}
-            <style>{`
-                .input-prototype-light {
-                    width: 100%; padding: 1rem 1.25rem; background-color: #f8fafc;
-                    border: 1px solid #e2e8f0; border-radius: 1.25rem; font-weight: 600; outline: none; transition: all 0.2s; color: #0f172a;
-                }
-                .input-prototype-light::placeholder { color: #94a3b8; }
-                .input-prototype-light:focus { background-color: #ffffff; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
-            `}</style>
+            */}
 
-            
         </div>
     );
 }
 
-// Mounting React ke Blade view
+
+// =============================================================
+// MOUNT REACT
+// =============================================================
+
 if (document.getElementById('auth-root')) {
-    ReactDOM.createRoot(document.getElementById('auth-root')).render(<Login />);
+
+    ReactDOM.createRoot(
+        document.getElementById('auth-root')
+    ).render(
+
+        <BrowserRouter basename="/app">
+            <Login />
+        </BrowserRouter>
+
+    );
 }

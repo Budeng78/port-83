@@ -7,7 +7,10 @@
     
     <!-- Vite Assets untuk React & Tailwind -->
     @viteReactRefresh
-    @vite(['Modules/Auth/Resources/css/app.css', 'Modules/Auth/Resources/js/app.jsx'])
+    @vite([
+    'resources/css/app.css',
+    'Modules/Auth/Resources/js/app.jsx',
+])
     
 </head>
 <body class="bg-slate-950 text-white antialiased min-h-screen m-0 p-0">

@@ -10,8 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             \Modules\Auth\Database\Seeders\UserSeeder::class,
-            \Modules\Auth\Database\Seeders\RoleAndPermissionSeeder::class,
-            \Modules\Auth\Database\Seeders\MenuSeeder::class,
+            
         ]);
     }
 }

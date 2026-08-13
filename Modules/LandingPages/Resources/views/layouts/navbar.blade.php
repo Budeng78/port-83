@@ -12,12 +12,10 @@
                 </div>
                 <div class="hidden md:block h-8 w-[1px] bg-white/20 mx-1"></div>
                 <div class="flex flex-col leading-none">
-                    <span class="text-sm md:text-lg font-black text-white uppercase italic tracking-tighter drop-shadow-sm">
+                    <span class="text-lg md:text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-sm">
                         PT. Sukun Wartono Indonesia
                     </span>
-                    <span class="text-[8px] md:text-[9px] text-blue-200 font-bold lowercase tracking-[0.3em] mt-1 opacity-90 uppercase">
-                        Progres24
-                    </span>
+                    
                 </div>
             </a>
 

@@ -7,7 +7,7 @@
     @viteReactRefresh
     @vite(['resources/js/main.jsx']) <!-- Titik masuk tunggal Vite -->
 </head>
-<body class="bg-slate-50 font-['Instrument_Sans'] antialiased">
+<body class="bg-slate-50  antialiased">
     <div id="root"></div>
 </body>
 </html>

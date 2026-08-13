@@ -3,13 +3,16 @@
 namespace Modules\Auth\Models;
 
 use App\Models\BaseModel;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends BaseModel
+class User extends BaseModel implements AuthenticatableContract
 {
-    use HasApiTokens, HasRoles, Notifiable;
+    use HasApiTokens;
+    use Notifiable;
+    use Authenticatable;
 
     protected $table = 'users';
 
