@@ -3,11 +3,13 @@ import { Navigate } from 'react-router-dom';
 
 // Impor Halaman
 import Dashboard from './aplikasi/pages/Dashboard';
-import UserManagement from './aplikasi/pages/users/UserManagement';
+import UserManagement from '@Modules/Auth/Resources/js/aplikasi/pages/users/UserManagement';
 import MenuManagement from '@Modules/System/Resources/js/aplikasi/pages/MenuManagement';
 import TrashManagement from '@Modules/System/Resources/js/aplikasi/pages/TrashManagement';
 import UnderConstruction from '@Modules/System/Resources/js/aplikasi/modals/UnderConstruction';
 import ModuleManager from '@Modules/System/Resources/js/aplikasi/pages/ModuleManager';
+import RoleManage from '@Modules/RBAC/Resources/js/aplikasi/pages/RoleManage';
+import PermissionManage from '@Modules/RBAC/Resources/js/aplikasi/pages/PermissionManage';
 
 export const dashboardRoutes = [
     {
@@ -25,6 +27,14 @@ export const dashboardRoutes = [
     {
         path: 'users',
         element: <UserManagement />
+    },
+    {
+        path: 'roles',
+        element: <RoleManage/>
+    },
+    {
+        path: 'permissions',
+        element: <PermissionManage/>
     },
     {
         path: 'trash/:module/:resource',

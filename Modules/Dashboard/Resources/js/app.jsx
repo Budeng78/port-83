@@ -4,7 +4,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@Modules/Auth/Resources/js/aplikasi/context/AuthContext';
 
 // Import Layout Utama dari Modul Core
-import DefaultLayout from '@Modules/System/Resources/js/aplikasi/templates/layouts/DefaultLayout';
+import DefaultLayout from '@Modules/Dashboard/Resources/js/aplikasi/templates/layouts/DefaultLayout';
 
 // Import Kumpulan Rute Dashboard
 import { dashboardRoutes } from './routes';

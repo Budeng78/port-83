@@ -1,0 +1,11 @@
+{
+    "name": "Aplikasi Parjos",
+    "short_name": "Parjos",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0f172a",
+    "description": "Aplikasi Parjos",
+    "icons": []
+}

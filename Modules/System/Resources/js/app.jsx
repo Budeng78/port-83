@@ -1,11 +1,11 @@
-import './bootstrap';
+//import './bootstrap';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@Modules/Auth/Resources/js/aplikasi/context/AuthContext';
 
 // Import Layout dan Halaman (sesuaikan path relatifnya dari folder Core/Resources/js)
-import DefaultLayout from '@Modules/System/Resources/js/aplikasi/templates/layouts/DefaultLayout';
+import DefaultLayout from '@Modules/Dashboard/Resources/js/aplikasi/templates/layouts/DefaultLayout';
 import Dashboard from '@Modules/Dashboard/Resources/js/aplikasi/pages/Dashboard';
 
 

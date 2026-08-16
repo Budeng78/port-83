@@ -4,4 +4,5 @@
     "description": "Modul yang bertanggung jawab mengelola role, permission, assignment, dan authorization pengguna dalam aplikasi.",
     "version": "1.0.0",
     "is_active": true
+   
 }

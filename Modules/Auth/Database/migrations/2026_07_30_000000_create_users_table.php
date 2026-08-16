@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('no_whatsapp')->nullable();
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
+            $table->uuid('deleted_by')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

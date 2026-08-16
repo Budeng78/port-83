@@ -1,7 +1,7 @@
 {
-    "name": "Core",
-    "alias": "core",
-    "description": "Modul fondasi utama yang memuat konfigurasi dasar, base class universal, helper, dan utilitas sistem aplikasi",
+    "name": "System",
+    "alias": "system",
+    "description": "Modul sistem aplikasi yang mengelola konfigurasi, menu, modul, utilitas, dan fungsi administrasi sistem.",
     "version": "1.0.0",
     "is_active": true
 }
