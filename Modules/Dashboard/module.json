@@ -1,7 +1,0 @@
-{
-    "name": "Dashboard",
-    "alias": "dashboard",
-    "description": "Modul halaman utama pasca-login yang bertanggung jawab menampilkan ringkasan metrik operasional, widget analitik real-time, dan pusat navigasi cepat bagi pengguna sistem",
-    "version": "1.0.0",
-    "is_active": true
-}

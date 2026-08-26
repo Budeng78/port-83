@@ -1,0 +1,11 @@
+{
+    "name": "LandingPages",
+    "alias": "landingpages",
+    "description": "Modul publik yang bertanggung jawab mengelola tampilan halaman depan (marketing site) untuk pengunjung umum, informasi produk, profil perusahaan, dan pintu masuk utama sebelum pengguna melakukan autentikasi",
+    "version": "1.0.0",
+    "keywords": [],
+    "priority": 0,
+    "providers": [],
+    "files": [],
+    "is_active": true
+}

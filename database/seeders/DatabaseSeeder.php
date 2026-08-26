@@ -17,8 +17,9 @@ class DatabaseSeeder extends Seeder
     {
         // Panggil seeder dari Modul Auth secara otomatis di sini
         $this->call([
-            \Modules\Auth\Database\Seeders\DatabaseSeeder::class,
-            \Modules\System\Database\Seeders\DatabaseSeeder::class,
+            \Modules\Platform\Auth\Database\Seeders\DatabaseSeeder::class,
+            \Modules\Platform\System\Database\Seeders\DatabaseSeeder::class,
+            \Modules\Platform\RBAC\Database\Seeders\DatabaseSeeder::class,
         ]);
     }
 }

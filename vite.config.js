@@ -2,156 +2,56 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import fs from 'fs';
+import react from '@vitejs/plugin-react';
+import { nodePolyfills } from '@blocksquaredev/vite-plugin-node-polyfills';
 import path from 'path';
-
-/*
-|--------------------------------------------------------------------------
-| Dynamic Module Inputs
-|--------------------------------------------------------------------------
-|
-| Mendeteksi entry point JS dan CSS dari setiap module.
-|
-| Convention:
-|
-| Modules/{Module}/Resources/js/app.jsx
-| Modules/{Module}/Resources/css/app.css
-|
-*/
-
-function getModuleInputs() {
-
-    const inputs = [
-        'resources/css/app.css',
-        'resources/js/app.js',
-    ];
-
-    const modulesPath = path.resolve(
-        import.meta.dirname,
-        'Modules'
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Jika folder Modules tidak ada
-    |--------------------------------------------------------------------------
-    */
-
-    if (!fs.existsSync(modulesPath)) {
-        return inputs;
-    }
-
-    const modules = fs.readdirSync(modulesPath);
-
-    modules.forEach((moduleName) => {
-
-        const modulePath = path.join(
-            modulesPath,
-            moduleName
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan benar-benar directory
-        |--------------------------------------------------------------------------
-        */
-
-        if (!fs.statSync(modulePath).isDirectory()) {
-            return;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Module React Entry
-        |--------------------------------------------------------------------------
-        |
-        | Contoh:
-        |
-        | Modules/System/Resources/js/app.jsx
-        | Modules/Auth/Resources/js/app.jsx
-        |
-        */
-
-        const moduleJsPath = path.join(
-            modulePath,
-            'Resources/js/app.jsx'
-        );
-
-        if (fs.existsSync(moduleJsPath)) {
-
-            inputs.push(
-                `Modules/${moduleName}/Resources/js/app.jsx`
-            );
-
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Module CSS Entry
-        |--------------------------------------------------------------------------
-        |
-        | Contoh:
-        |
-        | Modules/System/Resources/css/app.css
-        | Modules/Dashboard/Resources/css/app.css
-        |
-        */
-
-        const moduleCssPath = path.join(
-            modulePath,
-            'Resources/css/app.css'
-        );
-
-        if (fs.existsSync(moduleCssPath)) {
-
-            inputs.push(
-                `Modules/${moduleName}/Resources/css/app.css`
-            );
-
-        }
-
-    });
-
-    return inputs;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Vite Configuration
-|--------------------------------------------------------------------------
-*/
 
 export default defineConfig({
 
     plugins: [
 
-        /*
-        |--------------------------------------------------------------------------
-        | Laravel Vite
-        |--------------------------------------------------------------------------
-        */
-
         laravel({
-            input: getModuleInputs(),
+            input: [
+                'resources/css/app.css',
+                'Modules/Platform/Dashboard/Resources/js/app.jsx',
+            ],
             refresh: true,
         }),
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tailwind CSS v4
-        |--------------------------------------------------------------------------
-        */
+        react(),
 
         tailwindcss(),
 
         /*
         |--------------------------------------------------------------------------
-        | VitePWA
+        | Node Polyfills
         |--------------------------------------------------------------------------
+        |
+        | MQTT.js digunakan di browser melalui WebSocket.
+        | mqtt@4.3.7 masih menggunakan beberapa Node core module
+        | seperti events, url, stream, dll.
+        |
         */
 
+        nodePolyfills({
+            include: [
+                'buffer',
+                'events',
+                'process',
+                'stream',
+                'string_decoder',
+                'util',
+                'url',
+            ],
 
+            globals: {
+                Buffer: true,
+                global: true,
+                process: true,
+            },
+
+            protocolImports: true,
+        }),
 
         VitePWA({
             registerType: 'autoUpdate',
@@ -165,6 +65,7 @@ export default defineConfig({
                 display: 'standalone',
                 start_url: '/',
                 scope: '/',
+
                 icons: [
                     {
                         src: '/icons/pwa-192.png',
@@ -186,17 +87,8 @@ export default defineConfig({
 
     ],
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Path Alias
-    |--------------------------------------------------------------------------
-    */
-
     resolve: {
-
         alias: {
-
             '@Modules': path.resolve(
                 import.meta.dirname,
                 'Modules'
@@ -206,43 +98,24 @@ export default defineConfig({
                 import.meta.dirname,
                 'resources/js'
             ),
-
         },
-
     },
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Development Server
-    |--------------------------------------------------------------------------
-    */
-
     server: {
+        host: '0.0.0.0',
+
+        port: 5173,
+
+        hmr: {
+            host: '192.168.1.102',
+            port: 5173,
+        },
 
         watch: {
-
             ignored: [
                 '**/storage/framework/views/**',
             ],
-
         },
-
-        /*
-        |--------------------------------------------------------------------------
-        | Development dari komputer lain
-        |--------------------------------------------------------------------------
-        |
-        | Aktifkan jika diperlukan:
-        |
-        | host: '0.0.0.0',
-        | port: 5173,
-        |
-        */
-
-        // host: '0.0.0.0',
-        // port: 5173,
-
     },
 
 });

@@ -1,0 +1,44 @@
+git add .
+
+git commit -m "Perbaikan login API Sanctum"   <-- isi pesan kamu
+
+git push origin main
+
+
+
+
+
+
+
+
+
+mkdir -p Modules/Business/Produksi/Pos/ProsesCK/{Database/{migrations,Seeders},Http/{Controllers,Requests},Models,Services,Resources/{js/aplikasi/{components,context,pages,services},css,views},Routes}
+touch Modules/Business/Produksi/Pos/ProsesCK/module.json
+touch Modules/Business/Produksi/Pos/ProsesCK/Routes/{api.php,web.php}
+
+
+
+
+Modules/
+└── Business/
+    ├── Produksi/
+    │   ├── Produksi/
+    │   ├── Primary/
+    │   ├── Secondary/
+    │   └── Pos/
+    │       ├── Rajang/
+    │       ├── GudangBlend/
+    │       ├── Otomatis/
+    │       ├── Manual/
+    │       ├── GudangTSG/
+    │       ├── Kitchen/
+    │       ├── Proses1/
+    │       ├── Proses2/
+    │       └── ProsesCK/
+    │
+    ├── HRD/
+    │
+    ├── Teknik/
+    │   └── Maintenance/
+    │
+    └── Keuangan/

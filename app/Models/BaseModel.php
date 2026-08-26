@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Modules\Auth\Models\User;
+use Modules\Platform\Auth\Models\User;
 
 abstract class BaseModel extends Model
 {
