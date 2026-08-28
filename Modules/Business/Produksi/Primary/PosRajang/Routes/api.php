@@ -16,8 +16,8 @@ Route::middleware('auth:sanctum')->prefix('posrajang')->group(function () {
         Route::post('/recovery', [PenerimaanTimbangAwalRajangController::class, 'recovery']);
         Route::post('/', [PenerimaanTimbangAwalRajangController::class, 'store']);
         Route::get('/{id}', [PenerimaanTimbangAwalRajangController::class, 'show']);
-        Route::post('/{id}/tally', [PenerimaanTimbangAwalRajangController::class, 'storeTally']);
-        Route::delete('/{id}/tally/{nomorTally}', [PenerimaanTimbangAwalRajangController::class, 'deleteTally']);
+        Route::post('/{id}/pack', [PenerimaanTimbangAwalRajangController::class, 'storepack']);
+        Route::delete('/{id}/pack/{nomorpack}', [PenerimaanTimbangAwalRajangController::class, 'deletepack']);
         Route::put('/{id}/draft', [PenerimaanTimbangAwalRajangController::class, 'updateDraft']);
         Route::post('/{id}/finish', [PenerimaanTimbangAwalRajangController::class, 'finish']);
         Route::get('/{id}/print', [PenerimaanTimbangAwalRajangController::class, 'print']);

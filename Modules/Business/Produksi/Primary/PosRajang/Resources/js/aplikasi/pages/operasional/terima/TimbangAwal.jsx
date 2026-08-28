@@ -6,9 +6,7 @@ import React, {
 
 import mqtt from 'mqtt';
 
-import {
-    Timbangawal
-} from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/services/Timbangawal';
+import timbangAwalService from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/services/Timbangawal';
 
 
 export default function TimbangAwal() {
@@ -31,11 +29,11 @@ export default function TimbangAwal() {
 
     const currentIndexRef = useRef(1);
 
-    const savedTallyRef = useRef(
+    const savedPackRef = useRef(
         new Set()
     );
 
-    const savingTallyRef = useRef(
+    const savingPackRef = useRef(
         new Set()
     );
 
@@ -117,7 +115,7 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // TALLY
+    // PACK
     // =========================================================
 
     const [
@@ -131,8 +129,8 @@ export default function TimbangAwal() {
     ] = useState(5);
 
     const [
-        tallyValues,
-        setTallyValues
+        packValues,
+        setPackValues
     ] = useState({});
 
 
@@ -158,10 +156,10 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // CURRENT TALLY HELPER
+    // CURRENT PACK HELPER
     // =========================================================
 
-    const setNextTally = next => {
+    const setNextPack = next => {
 
         const value =
             Number(next) || 1;
@@ -189,10 +187,10 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // SIMPAN TALLY
+    // SIMPAN PACK
     // =========================================================
 
-    const simpanTally = async (
+    const simpanPack = async (
         nomor,
         berat
     ) => {
@@ -212,13 +210,13 @@ export default function TimbangAwal() {
 
 
         if (
-            savedTallyRef.current.has(
+            savedPackRef.current.has(
                 nomor
             )
         ) {
 
             addLog(
-                `Tally ${nomor} sudah tersimpan, dilewati.`
+                `Pack ${nomor} sudah tersimpan, dilewati.`
             );
 
             return false;
@@ -226,20 +224,20 @@ export default function TimbangAwal() {
 
 
         if (
-            savingTallyRef.current.has(
+            savingPackRef.current.has(
                 nomor
             )
         ) {
 
             addLog(
-                `Tally ${nomor} sedang diproses.`
+                `Pack ${nomor} sedang diproses.`
             );
 
             return false;
         }
 
 
-        savingTallyRef.current.add(
+        savingPackRef.current.add(
             nomor
         );
 
@@ -258,7 +256,7 @@ export default function TimbangAwal() {
 
 
         addLog(
-            `Menyimpan tally ${nomor}...`
+            `Menyimpan pack ${nomor}...`
         );
 
 
@@ -273,12 +271,12 @@ export default function TimbangAwal() {
 
 
             const data =
-                await Timbangawal.tambahTally({
+                await timbangAwalService.tambahPack({
 
                     dokumen_timbang_awal_id:
                         activeDokumenId,
 
-                    nomor_tally:
+                    nomor_pack:
                         nomor,
 
                     berat_bruto:
@@ -299,7 +297,7 @@ export default function TimbangAwal() {
 
                 addLog(
                     data.message ||
-                    `Gagal menyimpan tally ${nomor}.`
+                    `Gagal menyimpan pack ${nomor}.`
                 );
 
 
@@ -315,13 +313,13 @@ export default function TimbangAwal() {
             }
 
 
-            savedTallyRef.current.add(
+            savedPackRef.current.add(
                 nomor
             );
 
 
             addLog(
-                `Tally ${nomor} berhasil tersimpan.`
+                `Pack ${nomor} berhasil tersimpan.`
             );
 
 
@@ -331,7 +329,7 @@ export default function TimbangAwal() {
 
             addLog(
                 err.response?.data?.message ||
-                `Gagal menyimpan tally ${nomor}.`
+                `Gagal menyimpan pack ${nomor}.`
             );
 
 
@@ -349,7 +347,7 @@ export default function TimbangAwal() {
 
         } finally {
 
-            savingTallyRef.current.delete(
+            savingPackRef.current.delete(
                 nomor
             );
         }
@@ -547,7 +545,7 @@ export default function TimbangAwal() {
 
 
                 addLog(
-                    `Berat masuk: ${beratFixed} Kg → Tally ${nomor}`
+                    `Berat masuk: ${beratFixed} Kg → Pack ${nomor}`
                 );
 
 
@@ -555,7 +553,7 @@ export default function TimbangAwal() {
                 // TAMPILKAN SEMENTARA
                 // =================================================
 
-                setTallyValues(
+                setPackValues(
                     prev => ({
                         ...prev,
                         [nomor]:
@@ -569,7 +567,7 @@ export default function TimbangAwal() {
                 // =================================================
 
                 const berhasil =
-                    await simpanTally(
+                    await simpanPack(
                         nomor,
                         weight
                     );
@@ -581,7 +579,7 @@ export default function TimbangAwal() {
 
                 if (!berhasil) {
 
-                    setTallyValues(
+                    setPackValues(
                         prev => {
 
                             const copy = {
@@ -598,7 +596,7 @@ export default function TimbangAwal() {
 
 
                     addLog(
-                        `Tally ${nomor} tetap aktif karena penyimpanan gagal.`
+                        `Pack ${nomor} tetap aktif karena penyimpanan gagal.`
                     );
 
 
@@ -614,7 +612,7 @@ export default function TimbangAwal() {
                     nomor + 1;
 
 
-                setNextTally(
+                setNextPack(
                     next
                 );
 
@@ -639,7 +637,7 @@ export default function TimbangAwal() {
 
 
                 addLog(
-                    `Tally berikutnya: ${next}`
+                    `Pack berikutnya: ${next}`
                 );
             }
         );
@@ -783,7 +781,7 @@ export default function TimbangAwal() {
 
 
             const hasil =
-                await Timbangawal.cariBatch({
+                await timbangAwalService.cariBatch({
                     no_wo: noWo,
                     jenis,
                     s_k: sK
@@ -813,7 +811,7 @@ export default function TimbangAwal() {
 
                 const next =
                     Number(
-                        hasil.data.next_tally ||
+                        hasil.data.next_pack ||
                         details.length + 1
                     );
 
@@ -863,7 +861,7 @@ export default function TimbangAwal() {
 
 
                 // =============================================
-                // LOAD TALLY
+                // LOAD PACK
                 // =============================================
 
                 const values = {};
@@ -874,7 +872,7 @@ export default function TimbangAwal() {
 
                         const nomor =
                             Number(
-                                item.nomor_tally
+                                item.nomor_pack
                             );
 
                         const berat =
@@ -903,23 +901,23 @@ export default function TimbangAwal() {
                 );
 
 
-                setTallyValues(
+                setPackValues(
                     values
                 );
 
 
-                savedTallyRef.current =
+                savedPackRef.current =
                     new Set(
                         details.map(
                             item =>
                                 Number(
-                                    item.nomor_tally
+                                    item.nomor_pack
                                 )
                         )
                     );
 
 
-                setNextTally(
+                setNextPack(
                     next
                 );
 
@@ -944,12 +942,12 @@ export default function TimbangAwal() {
 
 
                 addLog(
-                    `Tally tersimpan: ${details.length}`
+                    `Pack tersimpan: ${details.length}`
                 );
 
 
                 addLog(
-                    `Tally berikutnya: ${next}`
+                    `Pack berikutnya: ${next}`
                 );
 
 
@@ -974,7 +972,7 @@ export default function TimbangAwal() {
 
 
                 const data =
-                    await Timbangawal
+                    await timbangAwalService
                         .initiateTimbanganDraft({
                             no:
                                 Number(no),
@@ -1031,7 +1029,7 @@ export default function TimbangAwal() {
                 const next =
                     Number(
                         data.data
-                            ?.next_tally ||
+                            ?.next_pack ||
                         1
                     );
 
@@ -1081,20 +1079,20 @@ export default function TimbangAwal() {
                 );
 
 
-                savedTallyRef.current =
+                savedPackRef.current =
                     new Set();
 
 
-                savingTallyRef.current =
+                savingPackRef.current =
                     new Set();
 
 
-                setTallyValues(
+                setPackValues(
                     {}
                 );
 
 
-                setNextTally(
+                setNextPack(
                     next
                 );
 
@@ -1114,7 +1112,7 @@ export default function TimbangAwal() {
 
 
                 addLog(
-                    `Tally berikutnya: ${next}`
+                    `Pack berikutnya: ${next}`
                 );
 
 
@@ -1172,7 +1170,7 @@ export default function TimbangAwal() {
 
 
             const data =
-                await Timbangawal.cariBatch({
+                await timbangAwalService.cariBatch({
                     no_wo: noWo,
                     jenis,
                     s_k: sK
@@ -1215,7 +1213,7 @@ export default function TimbangAwal() {
 
             const next =
                 Number(
-                    data.data?.next_tally ||
+                    data.data?.next_pack ||
                     details.length + 1
                 );
 
@@ -1271,7 +1269,7 @@ export default function TimbangAwal() {
 
                     const nomor =
                         Number(
-                            item.nomor_tally
+                            item.nomor_pack
                         );
 
                     const berat =
@@ -1300,23 +1298,23 @@ export default function TimbangAwal() {
             );
 
 
-            setTallyValues(
+            setPackValues(
                 values
             );
 
 
-            savedTallyRef.current =
+            savedPackRef.current =
                 new Set(
                     details.map(
                         item =>
                             Number(
-                                item.nomor_tally
+                                item.nomor_pack
                             )
                     )
                 );
 
 
-            setNextTally(
+            setNextPack(
                 next
             );
 
@@ -1337,12 +1335,12 @@ export default function TimbangAwal() {
 
 
             addLog(
-                `Tally tersimpan: ${details.length}`
+                `Pack tersimpan: ${details.length}`
             );
 
 
             addLog(
-                `Tally berikutnya: ${next}`
+                `Pack berikutnya: ${next}`
             );
 
         } catch (err) {
@@ -1367,10 +1365,10 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // DELETE TALLY
+    // DELETE PACK
     // =========================================================
 
-    const handleDeleteTally = async (
+    const handleDeletePack = async (
         nomor
     ) => {
 
@@ -1389,7 +1387,7 @@ export default function TimbangAwal() {
 
 
         if (
-            !savedTallyRef.current.has(
+            !savedPackRef.current.has(
                 nomor
             )
         ) {
@@ -1400,7 +1398,7 @@ export default function TimbangAwal() {
 
         if (
             !window.confirm(
-                `Hapus tally nomor ${nomor}?`
+                `Hapus pack nomor ${nomor}?`
             )
         ) {
 
@@ -1411,16 +1409,16 @@ export default function TimbangAwal() {
         try {
 
             addLog(
-                `Menghapus tally ${nomor}...`
+                `Menghapus pack ${nomor}...`
             );
 
 
             const data =
-                await Timbangawal.deleteTally({
+                await timbangAwalService.deletePack({
                     dokumen_timbang_awal_id:
                         activeDokumenId,
 
-                    nomor_tally:
+                    nomor_pack:
                         nomor
                 });
 
@@ -1431,7 +1429,7 @@ export default function TimbangAwal() {
 
                 addLog(
                     data.message ||
-                    `Gagal menghapus tally ${nomor}.`
+                    `Gagal menghapus pack ${nomor}.`
                 );
 
                 return;
@@ -1451,7 +1449,7 @@ export default function TimbangAwal() {
 
                     const nomorBaru =
                         Number(
-                            item.nomor_tally
+                            item.nomor_pack
                         );
 
                     const berat =
@@ -1480,34 +1478,34 @@ export default function TimbangAwal() {
             );
 
 
-            setTallyValues(
+            setPackValues(
                 values
             );
 
 
-            savedTallyRef.current =
+            savedPackRef.current =
                 new Set(
                     details.map(
                         item =>
                             Number(
-                                item.nomor_tally
+                                item.nomor_pack
                             )
                     )
                 );
 
 
-            savingTallyRef.current =
+            savingPackRef.current =
                 new Set();
 
 
             const next =
                 Number(
-                    data.data?.next_tally ||
+                    data.data?.next_pack ||
                     details.length + 1
                 );
 
 
-            setNextTally(
+            setNextPack(
                 next
             );
 
@@ -1527,19 +1525,19 @@ export default function TimbangAwal() {
 
 
             addLog(
-                `Tally ${nomor} berhasil dihapus.`
+                `Pack ${nomor} berhasil dihapus.`
             );
 
 
             addLog(
-                `Nomor dirapatkan. Tally berikutnya: ${next}.`
+                `Nomor dirapatkan. Pack berikutnya: ${next}.`
             );
 
         } catch (err) {
 
             addLog(
                 err.response?.data?.message ||
-                `Gagal menghapus tally ${nomor}.`
+                `Gagal menghapus pack ${nomor}.`
             );
 
 
@@ -1593,7 +1591,7 @@ export default function TimbangAwal() {
 
 
             const data =
-                await Timbangawal
+                await timbangAwalService
                     .commitTimbangan({
                         dokumen_timbang_awal_id:
                             activeDokumenId
@@ -1670,7 +1668,7 @@ export default function TimbangAwal() {
     // PRINT
     // =========================================================
 
-   const handleCetak = () => {
+    const handleCetak = () => {
 
         if (
             !dokumenIdRef.current
@@ -1716,7 +1714,7 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // SCROLL ACTIVE TALLY
+    // SCROLL ACTIVE PACK
     // =========================================================
 
     useEffect(() => {
@@ -1741,7 +1739,7 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // RENDER TALLY GRID
+    // RENDER PACK GRID
     // =========================================================
 
     const renderSheetGrid = () => {
@@ -1787,7 +1785,7 @@ export default function TimbangAwal() {
 
 
                             const value =
-                                tallyValues[
+                                packValues[
                                     nomor
                                 ] ?? '';
 
@@ -1891,7 +1889,7 @@ export default function TimbangAwal() {
                                                 hasValue
                                             ) {
 
-                                                handleDeleteTally(
+                                                handleDeletePack(
                                                     nomor
                                                 );
                                             }
@@ -1919,7 +1917,7 @@ export default function TimbangAwal() {
                                         `}
                                         title={
                                             hasValue
-                                                ? `Hapus tally ${nomor}`
+                                                ? `Hapus pack ${nomor}`
                                                 : ''
                                         }
                                     >
@@ -2223,7 +2221,7 @@ export default function TimbangAwal() {
 
 
             {/* =================================================
-                CARD 2 - TALLY
+                CARD 2 - PACK
             ================================================= */}
 
             <div
@@ -2259,7 +2257,7 @@ export default function TimbangAwal() {
                                 text-base
                             "
                         >
-                            Lembar Tally
+                            Lembar Pack
                         </h2>
 
 
@@ -2269,7 +2267,7 @@ export default function TimbangAwal() {
                                 text-gray-500
                             "
                         >
-                            Tally aktif:
+                            Pack aktif:
                             {' '}
                             <span
                                 className="

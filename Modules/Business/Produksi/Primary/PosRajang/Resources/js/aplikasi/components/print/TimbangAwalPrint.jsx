@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { Timbangawal } from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/services/Timbangawal';
+import TimbangAwal from "@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/services/Timbangawal";
 
 export default function TimbangAwalPrint() {
 
@@ -23,7 +23,7 @@ export default function TimbangAwalPrint() {
 
             try {
 
-                const data = await Timbangawal.getDetail(id);
+                const data = await TimbangAwal.getDetail(id);
 
                 if (!data.success) {
                     setError(data.message || 'Gagal memuat data.');
@@ -185,25 +185,25 @@ export default function TimbangAwalPrint() {
                     font-weight: bold;
                 }
 
-                table.tally-table {
+                table.pack-table {
                     width: 100%;
                     border-collapse: collapse;
                     margin-bottom: 16px;
                 }
 
-                table.tally-table th,
-                table.tally-table td {
+                table.pack-table th,
+                table.pack-table td {
                     border: 1px solid #999;
                     padding: 4px 8px;
                     font-size: 11px;
                 }
 
-                table.tally-table th {
+                table.pack-table th {
                     background: #f3f4f6;
                     text-align: left;
                 }
 
-                table.tally-table td.num {
+                table.pack-table td.num {
                     text-align: right;
                 }
 
@@ -285,8 +285,8 @@ export default function TimbangAwalPrint() {
 
                 </div>
 
-                {/* TABEL TALLY */}
-                <table className="tally-table">
+                {/* TABEL pack */}
+                <table className="pack-table">
                     <thead>
                         <tr>
                             <th style={{ width: '40px' }}>No</th>
@@ -298,8 +298,8 @@ export default function TimbangAwalPrint() {
                     </thead>
                     <tbody>
                         {details.map(item => (
-                            <tr key={item.nomor_tally}>
-                                <td>{item.nomor_tally}</td>
+                            <tr key={item.nomor_pack}>
+                                <td>{item.nomor_pack}</td>
                                 <td>{item.waktu_timbang}</td>
                                 <td className="num">{Number(item.berat_bruto).toFixed(2)}</td>
                                 <td className="num">{Number(item.tara).toFixed(2)}</td>
@@ -309,7 +309,7 @@ export default function TimbangAwalPrint() {
 
                         <tr className="total-row">
                             <td colSpan={2}>
-                                Total ({ringkasan?.jumlah_tally ?? details.length} tally)
+                                Total ({ringkasan?.jumlah_pack ?? details.length} pack)
                             </td>
                             <td className="num">
                                 {Number(ringkasan?.total_bruto || 0).toFixed(2)}

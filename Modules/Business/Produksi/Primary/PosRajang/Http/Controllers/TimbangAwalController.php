@@ -71,7 +71,7 @@ class TimbangAwalController extends Controller
                 'data' => [
                     'dokumen_timbang_awal' => DB::table(self::HEADER)->where('id', $id)->first(),
                     'cache' => $cache,
-                    'next_tally' => 1,
+                    'next_pack' => 1,
                     'jumlah_tertimbang' => 0,
                     'jumlah_bal' => $data['jumlah_bal'],
                 ],
@@ -92,7 +92,7 @@ class TimbangAwalController extends Controller
     {
         $data = $request->validate([
             'dokumen_timbang_awal_id' => 'required|uuid|exists:' . self::HEADER . ',id',
-            'nomor_tally' => 'required|integer|min:1',
+            'nomor_pack' => 'required|integer|min:1',
             'berat_bruto' => 'required|numeric|min:0',
             'tara' => 'required|numeric|min:0',
             'berat_netto' => 'required|numeric',
@@ -103,7 +103,7 @@ class TimbangAwalController extends Controller
 
         try {
             $id = $data['dokumen_timbang_awal_id'];
-            $nomor = (int) $data['nomor_tally'];
+            $nomor = (int) $data['nomor_pack'];
 
             $dokumen = DB::table(self::HEADER)
                 ->where('id', $id)
@@ -130,7 +130,7 @@ class TimbangAwalController extends Controller
 
             $existing = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $id)
-                ->where('nomor_tally', $nomor)
+                ->where('nomor_pack', $nomor)
                 ->whereNull('deleted_at')
                 ->first();
 
@@ -139,10 +139,10 @@ class TimbangAwalController extends Controller
                 return response()->json([
                     'success' => true,
                     'already_saved' => true,
-                    'message' => "Tally ke-{$nomor} sudah tersimpan.",
+                    'message' => "pack ke-{$nomor} sudah tersimpan.",
                     'data' => [
                         'detail' => $existing,
-                        'next_tally' => $next,
+                        'next_pack' => $next,
                         'jumlah_tertimbang' => $jumlah,
                     ],
                 ]);
@@ -152,10 +152,10 @@ class TimbangAwalController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nomor tally tidak sesuai urutan.',
+                    'message' => 'Nomor pack tidak sesuai urutan.',
                     'data' => [
-                        'nomor_tally_dikirim' => $nomor,
-                        'nomor_tally_berikutnya' => $next,
+                        'nomor_pack_dikirim' => $nomor,
+                        'nomor_pack_berikutnya' => $next,
                     ],
                 ], 409);
             }
@@ -165,7 +165,7 @@ class TimbangAwalController extends Controller
             DB::table(self::DETAIL)->insert([
                 'id' => $detailId,
                 'dokumen_timbang_awal_id' => $id,
-                'nomor_tally' => $nomor,
+                'nomor_pack' => $nomor,
                 'berat_bruto' => $data['berat_bruto'],
                 'tara' => $data['tara'],
                 'berat_netto' => $data['berat_netto'],
@@ -176,7 +176,7 @@ class TimbangAwalController extends Controller
 
             DB::table(self::CACHE)
                 ->where('dokumen_timbang_awal_id', $id)
-                ->where('nomor_tally', $nomor)
+                ->where('nomor_pack', $nomor)
                 ->whereNull('deleted_at')
                 ->update([
                     'deleted_at' => now(),
@@ -193,26 +193,26 @@ class TimbangAwalController extends Controller
             return response()->json([
                 'success' => true,
                 'already_saved' => false,
-                'message' => "Tally ke-{$nomor} berhasil disimpan.",
+                'message' => "pack ke-{$nomor} berhasil disimpan.",
                 'data' => [
                     'detail' => DB::table(self::DETAIL)->where('id', $detailId)->first(),
                     'cache' => $cache,
-                    'next_tally' => $next,
+                    'next_pack' => $next,
                     'jumlah_tertimbang' => $jumlah,
                     'jumlah_bal' => (int) $dokumen->jumlah_bal,
                 ],
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Gagal menyimpan tally.', [
+            Log::error('Gagal menyimpan pack.', [
                 'dokumen_timbang_awal_id' => $data['dokumen_timbang_awal_id'] ?? null,
-                'nomor_tally' => $data['nomor_tally'] ?? null,
+                'nomor_pack' => $data['nomor_pack'] ?? null,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan data tally.',
+                'message' => 'Gagal menyimpan data pack.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -248,7 +248,7 @@ class TimbangAwalController extends Controller
             $details = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $dokumen->id)
                 ->whereNull('deleted_at')
-                ->orderBy('nomor_tally')
+                ->orderBy('nomor_pack')
                 ->get();
 
             $jumlah = $details->count();
@@ -269,7 +269,7 @@ class TimbangAwalController extends Controller
                     'dokumen_timbang_awal' => $dokumen,
                     'cache' => $cache,
                     'details' => $details,
-                    'next_tally' => $next,
+                    'next_pack' => $next,
                     'jumlah_tertimbang' => $jumlah,
                     'jumlah_bal' => (int) $dokumen->jumlah_bal,
                 ],
@@ -290,14 +290,14 @@ class TimbangAwalController extends Controller
     {
         $data = $request->validate([
             'dokumen_timbang_awal_id' => 'required|uuid|exists:' . self::HEADER . ',id',
-            'nomor_tally' => 'required|integer|min:1',
+            'nomor_pack' => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
 
         try {
             $id = $data['dokumen_timbang_awal_id'];
-            $nomor = (int) $data['nomor_tally'];
+            $nomor = (int) $data['nomor_pack'];
 
             /*
             |--------------------------------------------------------------------------
@@ -335,7 +335,7 @@ class TimbangAwalController extends Controller
             */
             $detail = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $id)
-                ->where('nomor_tally', $nomor)
+                ->where('nomor_pack', $nomor)
                 ->whereNull('deleted_at')
                 ->lockForUpdate()
                 ->first();
@@ -345,7 +345,7 @@ class TimbangAwalController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'message' => "Tally ke-{$nomor} tidak ditemukan.",
+                    'message' => "pack ke-{$nomor} tidak ditemukan.",
                 ], 404);
             }
 
@@ -372,7 +372,7 @@ class TimbangAwalController extends Controller
             $details = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $id)
                 ->whereNull('deleted_at')
-                ->orderBy('nomor_tally', 'asc')
+                ->orderBy('nomor_pack', 'asc')
                 ->lockForUpdate()
                 ->get();
 
@@ -384,7 +384,7 @@ class TimbangAwalController extends Controller
             |
             | Karena ada UNIQUE:
             |
-            | dokumen_timbang_awal_id + nomor_tally
+            | dokumen_timbang_awal_id + nomor_pack
             |
             | Tidak boleh langsung:
             |
@@ -410,7 +410,7 @@ class TimbangAwalController extends Controller
                     DB::table(self::DETAIL)
                         ->where('id', $item->id)
                         ->update([
-                            'nomor_tally' => $temporaryBase + $index + 1,
+                            'nomor_pack' => $temporaryBase + $index + 1,
                             'updated_at' => $now,
                         ]);
                 }
@@ -426,7 +426,7 @@ class TimbangAwalController extends Controller
                     DB::table(self::DETAIL)
                         ->where('id', $item->id)
                         ->update([
-                            'nomor_tally' => $index + 1,
+                            'nomor_pack' => $index + 1,
                             'updated_at' => $now,
                         ]);
                 }
@@ -444,7 +444,7 @@ class TimbangAwalController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | TALLY BERIKUTNYA
+            | pack BERIKUTNYA
             |--------------------------------------------------------------------------
             */
             $next = $jumlah + 1;
@@ -465,7 +465,7 @@ class TimbangAwalController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | BUAT CACHE BARU UNTUK TALLY BERIKUTNYA
+            | BUAT CACHE BARU UNTUK pack BERIKUTNYA
             |--------------------------------------------------------------------------
             */
             $cache = $this->createCache(
@@ -482,20 +482,20 @@ class TimbangAwalController extends Controller
             $latestDetails = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $id)
                 ->whereNull('deleted_at')
-                ->orderBy('nomor_tally', 'asc')
+                ->orderBy('nomor_pack', 'asc')
                 ->get();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => "Tally ke-{$nomor} berhasil dihapus.",
+                'message' => "pack ke-{$nomor} berhasil dihapus.",
                 'data' => [
-                    'deleted_nomor_tally' => $nomor,
+                    'deleted_nomor_pack' => $nomor,
                     'details' => $latestDetails,
                     'cache' => $cache,
                     'jumlah_tertimbang' => $jumlah,
-                    'next_tally' => $next,
+                    'next_pack' => $next,
                 ],
             ]);
 
@@ -503,16 +503,16 @@ class TimbangAwalController extends Controller
 
             DB::rollBack();
 
-            Log::error('Gagal menghapus tally.', [
+            Log::error('Gagal menghapus pack.', [
                 'dokumen_timbang_awal_id' => $data['dokumen_timbang_awal_id'] ?? null,
-                'nomor_tally' => $data['nomor_tally'] ?? null,
+                'nomor_pack' => $data['nomor_pack'] ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus tally.',
+                'message' => 'Gagal menghapus pack.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -591,7 +591,7 @@ class TimbangAwalController extends Controller
     {
         $data = $request->validate([
             'dokumen_timbang_awal_id' => 'required|uuid|exists:' . self::HEADER . ',id',
-            'nomor_tally' => 'required|integer|min:1',
+            'nomor_pack' => 'required|integer|min:1',
             'berat_bruto' => 'required|numeric|min:0',
             'tara' => 'required|numeric|min:0',
             'berat_netto' => 'required|numeric',
@@ -614,7 +614,7 @@ class TimbangAwalController extends Controller
 
             $cache = DB::table(self::CACHE)
                 ->where('dokumen_timbang_awal_id', $dokumen->id)
-                ->where('nomor_tally', $data['nomor_tally'])
+                ->where('nomor_pack', $data['nomor_pack'])
                 ->whereNull('deleted_at')
                 ->first();
 
@@ -629,7 +629,7 @@ class TimbangAwalController extends Controller
             } else {
                 $cache = $this->createCache(
                     $dokumen->id,
-                    (int) $data['nomor_tally'],
+                    (int) $data['nomor_pack'],
                     $data['tara'],
                     $data['berat_bruto'],
                     $data['berat_netto'],
@@ -644,7 +644,7 @@ class TimbangAwalController extends Controller
                 'message' => 'Data live timbangan berhasil diperbarui.',
                 'data' => ['cache' => DB::table(self::CACHE)
                     ->where('dokumen_timbang_awal_id', $dokumen->id)
-                    ->where('nomor_tally', $data['nomor_tally'])
+                    ->where('nomor_pack', $data['nomor_pack'])
                     ->whereNull('deleted_at')
                     ->first()],
             ]);
@@ -675,13 +675,13 @@ class TimbangAwalController extends Controller
             $details = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $id)
                 ->whereNull('deleted_at')
-                ->orderBy('nomor_tally')
+                ->orderBy('nomor_pack')
                 ->get();
 
             return view('prosesck.penerimaan.print', [
                 'header' => $header,
                 'details' => $details,
-                'totalTally' => $details->count(),
+                'totalpack' => $details->count(),
                 'totalBruto' => $details->sum('berat_bruto'),
                 'totalTara' => $details->sum('tara'),
                 'totalNetto' => $details->sum('berat_netto'),
@@ -698,7 +698,7 @@ class TimbangAwalController extends Controller
 
     private function createCache(
         string $dokumenId,
-        int $nomorTally,
+        int $nomorpack,
         float|int|string $tara,
         float|int|string $beratBruto = 0,
         float|int|string $beratNetto = 0,
@@ -709,7 +709,7 @@ class TimbangAwalController extends Controller
         DB::table(self::CACHE)->insert([
             'id' => $id,
             'dokumen_timbang_awal_id' => $dokumenId,
-            'nomor_tally' => $nomorTally,
+            'nomor_pack' => $nomorpack,
             'berat_bruto' => $beratBruto,
             'tara' => $tara,
             'berat_netto' => $beratNetto,
@@ -732,7 +732,7 @@ class TimbangAwalController extends Controller
                     DB::table(self::DETAIL)
                         ->select(
                             'dokumen_timbang_awal_id',
-                            DB::raw('COUNT(*) as jumlah_tally'),
+                            DB::raw('COUNT(*) as jumlah_pack'),
                             DB::raw('SUM(berat_bruto) as total_bruto'),
                             DB::raw('SUM(tara) as total_tara'),
                             DB::raw('SUM(berat_netto) as total_netto')
@@ -758,7 +758,7 @@ class TimbangAwalController extends Controller
                     'h.created_at',
                     'h.updated_at',
 
-                    DB::raw('COALESCE(d.jumlah_tally, 0) as jumlah_tally'),
+                    DB::raw('COALESCE(d.jumlah_pack, 0) as jumlah_pack'),
                     DB::raw('COALESCE(d.total_bruto, 0) as total_bruto'),
                     DB::raw('COALESCE(d.total_tara, 0) as total_tara'),
                     DB::raw('COALESCE(d.total_netto, 0) as total_netto'),
@@ -855,7 +855,7 @@ class TimbangAwalController extends Controller
             $details = DB::table(self::DETAIL)
                 ->where('dokumen_timbang_awal_id', $id)
                 ->whereNull('deleted_at')
-                ->orderBy('nomor_tally')
+                ->orderBy('nomor_pack')
                 ->get();
 
             return response()->json([
@@ -864,7 +864,7 @@ class TimbangAwalController extends Controller
                     'dokumen_timbang_awal' => $header,
                     'details' => $details,
                     'ringkasan' => [
-                        'jumlah_tally' => $details->count(),
+                        'jumlah_pack' => $details->count(),
                         'total_bruto' => $details->sum('berat_bruto'),
                         'total_tara' => $details->sum('tara'),
                         'total_netto' => $details->sum('berat_netto'),

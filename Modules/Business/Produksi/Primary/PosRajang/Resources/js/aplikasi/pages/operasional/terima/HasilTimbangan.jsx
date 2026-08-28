@@ -1262,7 +1262,7 @@ export default function HasilTimbangan() {
                                     </TableHead>
 
                                     <TableHead align="right">
-                                        Tally
+                                        Bal
                                     </TableHead>
 
                                     <TableHead align="right">
@@ -1343,7 +1343,7 @@ export default function HasilTimbangan() {
                                                 "
                                             >
                                                 {Number(
-                                                    item.jumlah_tally ||
+                                                    item.jumlah_bal ||
                                                     0
                                                 ).toLocaleString(
                                                     "id-ID"
@@ -1716,7 +1716,7 @@ export default function HasilTimbangan() {
                                             text-slate-400
                                         "
                                     >
-                                        Rincian dokumen dan tally.
+                                        Rincian dokumen dan Bal.
                                     </p>
 
                                 </div>
@@ -1907,11 +1907,11 @@ export default function HasilTimbangan() {
 
                                         <SummaryCard
                                             icon={Package}
-                                            label="Jumlah Tally"
+                                            label="Jumlah Bal"
                                             value={
                                                 detail
                                                     .ringkasan
-                                                    ?.jumlah_tally ||
+                                                    ?.jumlah_bal ||
                                                 0
                                             }
                                         />
@@ -1945,7 +1945,7 @@ export default function HasilTimbangan() {
                                     </div>
 
 
-                                    {/* DETAIL TALLY */}
+                                    {/* DETAIL bal */}
 
                                     <div
                                         className="
@@ -1972,7 +1972,7 @@ export default function HasilTimbangan() {
                                                     text-slate-800
                                                 "
                                             >
-                                                Rincian Tally
+                                                Rincian bal
                                             </h3>
 
                                         </div>
@@ -1997,7 +1997,7 @@ export default function HasilTimbangan() {
                                                     >
 
                                                         <TableHead>
-                                                            Tally
+                                                            Bal
                                                         </TableHead>
 
                                                         <TableHead align="right">
@@ -2048,7 +2048,7 @@ export default function HasilTimbangan() {
                                                                             "
                                                                         >
                                                                             {
-                                                                                item.nomor_tally
+                                                                                item.nomor_bal
                                                                             }
                                                                         </span>
 

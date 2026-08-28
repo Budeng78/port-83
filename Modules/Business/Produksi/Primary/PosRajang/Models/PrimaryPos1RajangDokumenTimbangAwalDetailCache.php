@@ -11,7 +11,7 @@ class PrimaryPos1RajangDokumenTimbangAwalDetailCache extends BaseModel
 
     protected $fillable = [
         'dokumen_timbang_awal_id',
-        'nomor_tally',
+        'nomor_pack',
         'berat_bruto',
         'tara',
         'berat_netto',
@@ -19,7 +19,7 @@ class PrimaryPos1RajangDokumenTimbangAwalDetailCache extends BaseModel
     ];
 
     protected $casts = [
-        'nomor_tally' => 'integer',
+        'nomor_pack' => 'integer',
         'berat_bruto' => 'decimal:2',
         'tara' => 'decimal:2',
         'berat_netto' => 'decimal:2',
