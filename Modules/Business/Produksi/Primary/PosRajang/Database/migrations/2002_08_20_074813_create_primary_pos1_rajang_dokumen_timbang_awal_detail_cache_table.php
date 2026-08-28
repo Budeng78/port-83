@@ -31,13 +31,13 @@ return new class extends Migration
 
                 /*
                 |--------------------------------------------------------------------------
-                | Nomor Tally / Nomor Bal
+                | Nomor Pack
                 |--------------------------------------------------------------------------
                 |
-                | 1 nomor tally = 1 bal = 1 hasil timbang.
+                | 1 nomor pack = 1 bal = 1 hasil timbang.
                 |
                 */
-                $table->unsignedInteger('nomor_tally');
+                $table->unsignedInteger('nomor_pack');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -110,23 +110,23 @@ return new class extends Migration
                 );
 
                 $table->index(
-                    'nomor_tally',
+                    'nomor_pack',
                     'dtaw_cache_nomor_idx'
                 );
 
                 /*
                 |--------------------------------------------------------------------------
-                | Unique Tally
+                | Unique Pack
                 |--------------------------------------------------------------------------
                 |
                 | Dalam satu dokumen timbang,
-                | satu nomor tally hanya boleh muncul satu kali.
+                | satu nomor pack hanya boleh muncul satu kali.
                 |
                 */
                 $table->unique(
                     [
                         'dokumen_timbang_awal_id',
-                        'nomor_tally',
+                        'nomor_pack',
                     ],
                     'dtaw_cache_unique'
                 );

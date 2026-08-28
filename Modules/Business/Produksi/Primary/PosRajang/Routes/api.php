@@ -32,5 +32,10 @@ Route::middleware('auth:sanctum')->prefix('posrajang')->group(function () {
         Route::post('/update-draft', [TimbangAwalController::class, 'updateDraft']);
         Route::post('/finish-session', [TimbangAwalController::class, 'finishSession']);
         Route::get('/print/{id}', [TimbangAwalController::class, 'print']);
+        // ---- MANAGE HASIL TIMBANGAN ----//
+        Route::get('/hasil-timbangan', [TimbangAwalController::class,'hasilTimbangan']);
+        Route::get('/hasil-timbangan/{id}', [TimbangAwalController::class,'detailHasilTimbangan']);
+
+
     });
 });

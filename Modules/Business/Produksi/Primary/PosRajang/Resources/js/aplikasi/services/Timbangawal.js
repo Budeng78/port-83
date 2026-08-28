@@ -47,4 +47,8 @@ export const Timbangawal = {
         });
         return response.data;
     },
+    getDetail: async (id) => {
+        const response = await apiClient.get(`/hasil-timbangan/${id}`);
+        return response.data;
+    },
 };

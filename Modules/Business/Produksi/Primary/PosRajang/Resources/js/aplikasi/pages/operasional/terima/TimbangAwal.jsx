@@ -1670,7 +1670,7 @@ export default function TimbangAwal() {
     // PRINT
     // =========================================================
 
-    const handleCetak = () => {
+   const handleCetak = () => {
 
         if (
             !dokumenIdRef.current
@@ -1685,7 +1685,7 @@ export default function TimbangAwal() {
 
 
         window.open(
-            `/posrajang/timbangawal/print/${dokumenIdRef.current}`,
+            `/app/produksi/primary/print/${dokumenIdRef.current}`,
             '_blank'
         );
     };

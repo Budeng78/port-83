@@ -720,4 +720,178 @@ class TimbangAwalController extends Controller
 
         return DB::table(self::CACHE)->where('id', $id)->first();
     }
+
+
+//==== MANAGEMEN HASIL TIMBANGAN ==== //
+
+    public function hasilTimbangan(Request $request)
+    {
+        try {
+            $query = DB::table(self::HEADER . ' as h')
+                ->leftJoinSub(
+                    DB::table(self::DETAIL)
+                        ->select(
+                            'dokumen_timbang_awal_id',
+                            DB::raw('COUNT(*) as jumlah_tally'),
+                            DB::raw('SUM(berat_bruto) as total_bruto'),
+                            DB::raw('SUM(tara) as total_tara'),
+                            DB::raw('SUM(berat_netto) as total_netto')
+                        )
+                        ->whereNull('deleted_at')
+                        ->groupBy('dokumen_timbang_awal_id'),
+                    'd',
+                    'd.dokumen_timbang_awal_id',
+                    '=',
+                    'h.id'
+                )
+                ->where('h.status', 'completed')
+                ->whereNull('h.deleted_at')
+                ->select([
+                    'h.id',
+                    'h.no',
+                    'h.no_wo',
+                    'h.jenis',
+                    'h.s_k',
+                    'h.tara',
+                    'h.jumlah_bal',
+                    'h.status',
+                    'h.created_at',
+                    'h.updated_at',
+
+                    DB::raw('COALESCE(d.jumlah_tally, 0) as jumlah_tally'),
+                    DB::raw('COALESCE(d.total_bruto, 0) as total_bruto'),
+                    DB::raw('COALESCE(d.total_tara, 0) as total_tara'),
+                    DB::raw('COALESCE(d.total_netto, 0) as total_netto'),
+                ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | SEARCH
+            |--------------------------------------------------------------------------
+            */
+
+            if ($request->filled('search')) {
+                $search = trim($request->search);
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('h.no_wo', 'like', "%{$search}%")
+                        ->orWhere('h.no', 'like', "%{$search}%")
+                        ->orWhere('h.jenis', 'like', "%{$search}%")
+                        ->orWhere('h.s_k', 'like', "%{$search}%");
+                });
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FILTER JENIS
+            |--------------------------------------------------------------------------
+            */
+
+            if ($request->filled('jenis')) {
+                $query->where('h.jenis', $request->jenis);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FILTER S/K
+            |--------------------------------------------------------------------------
+            */
+
+            if ($request->filled('s_k')) {
+                $query->where('h.s_k', $request->s_k);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | PAGINATION
+            |--------------------------------------------------------------------------
+            */
+
+            $perPage = min(
+                max($request->integer('per_page', 15), 1),
+                100
+            );
+
+            $data = $query
+                ->orderByDesc('h.updated_at')
+                ->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ]);
+
+        } catch (\Throwable $e) {
+
+            Log::error('Gagal mengambil manajemen hasil timbang.', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil hasil timbangan.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function detailHasilTimbangan(string $id)
+    {
+        try {
+
+            $header = DB::table(self::HEADER)
+                ->where('id', $id)
+                ->where('status', 'completed')
+                ->whereNull('deleted_at')
+                ->first();
+
+            if (!$header) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hasil timbangan tidak ditemukan.',
+                ], 404);
+            }
+
+            $details = DB::table(self::DETAIL)
+                ->where('dokumen_timbang_awal_id', $id)
+                ->whereNull('deleted_at')
+                ->orderBy('nomor_tally')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'dokumen_timbang_awal' => $header,
+                    'details' => $details,
+                    'ringkasan' => [
+                        'jumlah_tally' => $details->count(),
+                        'total_bruto' => $details->sum('berat_bruto'),
+                        'total_tara' => $details->sum('tara'),
+                        'total_netto' => $details->sum('berat_netto'),
+                    ],
+                ],
+            ]);
+
+        } catch (\Throwable $e) {
+
+            Log::error('Gagal mengambil detail hasil timbang.', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail hasil timbangan.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+
+
+
+
 }
+

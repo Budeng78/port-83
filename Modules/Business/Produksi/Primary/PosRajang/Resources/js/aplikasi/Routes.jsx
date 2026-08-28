@@ -1,21 +1,14 @@
 import React, { lazy } from 'react';
 
-const Dashboard = lazy(() =>
-    import(
-        '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/Dashboard.jsx'
-    )
-);
-
-const Timbangawal = lazy(() =>
-    import("@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/TimbangAwal.jsx")
-);
+const Dashboard = lazy(() =>import('@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/Dashboard.jsx'));
+const Timbangawal = lazy(() =>import("@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/TimbangAwal.jsx"));
+const WoRajang = lazy(() =>import('@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/WoRajang.jsx'));
+const hasilTimbangan = lazy(() =>import('@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/HasilTimbangan.jsx'));
+const HasilTimbangan = lazy(() => import('@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/HasilTimbangan.jsx'));
+const TimbangAwalPrint = lazy(() => import('@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/components/print/TimbangAwalPrint'));
 
 
-const WoRajang = lazy(() =>
-    import(
-        '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/WoRajang.jsx'
-    )
-);
+
 
 // alamat menu ==>> path: '/app/produksi/primary'
 
@@ -31,5 +24,13 @@ export const PosRajang = [
     {
         path: 'WoRajang',
         element: <WoRajang />,
+    },
+    {
+        path: 'hasilTimbangan',
+        element: <HasilTimbangan />,
+    },
+    {
+        path: 'print/:id',
+        element: <TimbangAwalPrint />,
     },
 ];
