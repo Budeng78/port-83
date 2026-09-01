@@ -5,6 +5,7 @@ import { AuthProvider } from '@Modules/Platform/Auth/Resources/js/aplikasi/conte
 
 // import router modules
 import { PosRajang } from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/Routes.jsx';
+import { rnd } from '@Modules/Business/rnd/Resources/js/aplikasi/Routes.jsx';
 
 
 // Import komponen menggunakan Lazy Loading untuk memecah chunk size
@@ -74,6 +75,23 @@ const router = createBrowserRouter([
             ...PosRajang,
         ],
     },
+    {
+        path: '/app/rnd',
+        element: (
+            <ProtectedRoute>
+                <Suspense fallback={<Loading />}>
+                    <DefaultLayout />
+                </Suspense>
+            </ProtectedRoute>
+        ),
+        children: [
+            ...rnd,
+        ],
+    },
+
+
+
+
 ]);
 
 function App() {

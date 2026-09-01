@@ -49,7 +49,7 @@ const TimbangAwal = {
 
     /*
     |--------------------------------------------------------------------------
-    | PACK / pack
+    | PACK / KARUNG
     |--------------------------------------------------------------------------
     */
 
@@ -76,7 +76,7 @@ const TimbangAwal = {
 
     /*
     |--------------------------------------------------------------------------
-    | FINISH
+    | FINISH SESSION
     |--------------------------------------------------------------------------
     */
 
@@ -121,6 +121,37 @@ const TimbangAwal = {
 
         return response.data;
     },
+
+    getHasilTimbangan: async () => {
+        const response = await apiClient.get(
+            '/hasil-timbangan'
+        );
+
+        return response.data;
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA TIMBANG DARI NODE-RED
+    |--------------------------------------------------------------------------
+    |
+    | Node-RED:
+    | POST /api/timbangan/penerimaan
+    |
+    | React:
+    | GET /api/timbangan/penerimaan
+    |
+    */
+
+    getDataTimbangMasuk: async () => {
+        const response = await api.get(
+            '/timbangan/penerimaan'
+        );
+
+        return response.data;
+    },
+
 };
 
 export default TimbangAwal;

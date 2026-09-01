@@ -134,7 +134,7 @@ document.addEventListener(
     function () {
 
         const broker =
-            'ws://192.168.1.102:9001';
+            'ws://192.168.4.222:9001';
 
         const topic =
             '/timbangan/data';

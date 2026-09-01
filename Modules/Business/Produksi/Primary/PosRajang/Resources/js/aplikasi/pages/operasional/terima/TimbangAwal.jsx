@@ -4,22 +4,10 @@ import React, {
     useState
 } from 'react';
 
-import mqtt from 'mqtt';
-
 import timbangAwalService from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/services/Timbangawal';
 
 
 export default function TimbangAwal() {
-
-    // =========================================================
-    // MQTT
-    // =========================================================
-
-    const brokerUrl = 'ws://192.168.1.102:9001';
-    const targetTopic = '/timbangan/data';
-
-    const mqttClientRef = useRef(null);
-
 
     // =========================================================
     // DOKUMEN
@@ -43,6 +31,13 @@ export default function TimbangAwal() {
     // =========================================================
 
     const logBoxRef = useRef(null);
+
+
+    // =========================================================
+    // POLLING
+    // =========================================================
+
+    const pollingRef = useRef(null);
 
 
     // =========================================================
@@ -78,7 +73,7 @@ export default function TimbangAwal() {
         logs,
         setLogs
     ] = useState([
-        '[Sistem] Menunggu koneksi...'
+        '[Sistem] Menunggu data dari Laravel...'
     ]);
 
 
@@ -156,7 +151,7 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // CURRENT PACK HELPER
+    // SET NEXT PACK
     // =========================================================
 
     const setNextPack = next => {
@@ -262,7 +257,6 @@ export default function TimbangAwal() {
 
         try {
 
-            // MariaDB DATETIME
             const waktuTimbang =
                 new Date()
                     .toISOString()
@@ -355,17 +349,245 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // MQTT CONNECT
+    // AMBIL DATA TIMBANG DARI LARAVEL
     // =========================================================
 
-    const connectMqtt = () => {
+    const ambilDataTimbang = async () => {
 
         if (
-            mqttClientRef.current?.connected
+            !dokumenIdRef.current ||
+            isFinished
+        ) {
+            return;
+        }
+
+
+        try {
+
+            const response =
+                await timbangAwalService
+                    .getDataTimbangMasuk();
+
+
+            if (
+                !response?.success
+            ) {
+                return;
+            }
+
+
+            const data =
+                response.data;
+
+
+            if (!data) {
+                return;
+            }
+
+
+            const weight =
+                Number(
+                    data.berat ??
+                    data.weight ??
+                    data.value
+                );
+
+
+            if (
+                !Number.isFinite(
+                    weight
+                )
+            ) {
+                return;
+            }
+
+
+            const waktu =
+                data.received_at ??
+                data.time ??
+                new Date().toISOString();
+
+
+            const nomor =
+                currentIndexRef.current;
+
+
+            const beratFixed =
+                weight.toFixed(2);
+
+
+            // =================================================
+            // TAMPILKAN BERAT
+            // =================================================
+
+            setWeightDisplay(
+                beratFixed
+            );
+
+
+            setTimeDisplay(
+                new Date(waktu)
+                    .toLocaleTimeString(
+                        'id-ID',
+                        {
+                            hour12: false
+                        }
+                    )
+            );
+
+
+            // =================================================
+            // JIKA BERAT 0, JANGAN SIMPAN
+            // =================================================
+
+            if (
+                weight <= 0
+            ) {
+                return;
+            }
+
+
+            // =================================================
+            // JIKA PACK SUDAH TERSIMPAN,
+            // JANGAN PROSES ULANG DATA YANG SAMA
+            // =================================================
+
+            if (
+                savedPackRef.current.has(
+                    nomor
+                ) ||
+                savingPackRef.current.has(
+                    nomor
+                )
+            ) {
+                return;
+            }
+
+
+            addLog(
+                `Berat dari Laravel: ${beratFixed} Kg → Pack ${nomor}`
+            );
+
+
+            // =================================================
+            // TAMPILKAN SEMENTARA
+            // =================================================
+
+            setPackValues(
+                prev => ({
+                    ...prev,
+                    [nomor]:
+                        beratFixed
+                })
+            );
+
+
+            // =================================================
+            // SIMPAN
+            // =================================================
+
+            const berhasil =
+                await simpanPack(
+                    nomor,
+                    weight
+                );
+
+
+            // =================================================
+            // GAGAL
+            // =================================================
+
+            if (!berhasil) {
+
+                setPackValues(
+                    prev => {
+
+                        const copy = {
+                            ...prev
+                        };
+
+                        delete copy[
+                            nomor
+                        ];
+
+                        return copy;
+                    }
+                );
+
+
+                addLog(
+                    `Pack ${nomor} tetap aktif karena penyimpanan gagal.`
+                );
+
+
+                return;
+            }
+
+
+            // =================================================
+            // BERHASIL
+            // =================================================
+
+            const next =
+                nomor + 1;
+
+
+            setNextPack(
+                next
+            );
+
+
+            setTotalBoxes(
+                prev => {
+
+                    if (
+                        next > prev
+                    ) {
+
+                        return prev + 5;
+                    }
+
+                    return prev;
+                }
+            );
+
+
+            addLog(
+                `Pack berikutnya: ${next}`
+            );
+
+        } catch (err) {
+
+            addLog(
+                err.response?.data?.message ||
+                'Gagal mengambil data timbang dari Laravel.'
+            );
+        }
+    };
+
+
+    // =========================================================
+    // MULAI / BERHENTI PANTAU DATA LARAVEL
+    // =========================================================
+
+    const connectTimbangan = () => {
+
+        if (
+            isConnected
+        ) {
+
+            disconnectTimbangan();
+
+            return;
+        }
+
+
+        if (
+            !dokumenIdRef.current
         ) {
 
             addLog(
-                'MQTT sudah terhubung.'
+                'Dokumen timbang belum tersedia.'
             );
 
             return;
@@ -373,357 +595,58 @@ export default function TimbangAwal() {
 
 
         addLog(
-            `Menghubungkan MQTT: ${brokerUrl}`
+            'Mulai memantau data timbang dari Laravel...'
         );
 
 
-        const client =
-            mqtt.connect(
-                brokerUrl,
-                {
-                    username: 'tes',
-                    password: 'tes123',
-                    reconnectPeriod: 3000
-                }
+        setIsConnected(
+            true
+        );
+
+
+        // Ambil langsung
+        ambilDataTimbang();
+
+
+        // Polling setiap 1 detik
+        pollingRef.current =
+            setInterval(
+                () => {
+
+                    ambilDataTimbang();
+
+                },
+                1000
             );
-
-
-        mqttClientRef.current =
-            client;
-
-
-        client.on(
-            'connect',
-            () => {
-
-                addLog(
-                    'MQTT berhasil terhubung.'
-                );
-
-
-                client.subscribe(
-                    targetTopic,
-                    err => {
-
-                        if (err) {
-
-                            addLog(
-                                `Gagal subscribe: ${err.message}`
-                            );
-
-                            setIsConnected(
-                                false
-                            );
-
-                            return;
-                        }
-
-
-                        addLog(
-                            `Subscribe: ${targetTopic}`
-                        );
-
-
-                        setIsConnected(
-                            true
-                        );
-                    }
-                );
-            }
-        );
-
-
-        // =====================================================
-        // MQTT MESSAGE
-        // =====================================================
-
-        client.on(
-            'message',
-            async (
-                topic,
-                message
-            ) => {
-
-                if (
-                    topic !==
-                    targetTopic
-                ) {
-                    return;
-                }
-
-
-                const raw =
-                    message
-                        .toString()
-                        .trim();
-
-
-                let weight =
-                    NaN;
-
-                let time =
-                    new Date()
-                        .toLocaleTimeString(
-                            'id-ID',
-                            {
-                                hour12: false
-                            }
-                        );
-
-
-                try {
-
-                    const data =
-                        JSON.parse(raw);
-
-
-                    if (
-                        typeof data ===
-                        'number'
-                    ) {
-
-                        weight =
-                            Number(data);
-
-                    } else {
-
-                        weight =
-                            Number(
-                                data.value ??
-                                data.berat ??
-                                data.weight ??
-                                data.payload
-                            );
-
-
-                        if (data.time) {
-
-                            time =
-                                data.time;
-                        }
-                    }
-
-                } catch {
-
-                    weight =
-                        Number(raw);
-                }
-
-
-                if (
-                    !Number.isFinite(
-                        weight
-                    )
-                ) {
-
-                    addLog(
-                        `Data MQTT bukan berat: ${raw}`
-                    );
-
-                    return;
-                }
-
-
-                // PENTING:
-                // ambil nomor dari REF,
-                // bukan currentIndex state
-                const nomor =
-                    currentIndexRef.current;
-
-
-                const beratFixed =
-                    weight.toFixed(2);
-
-
-                setWeightDisplay(
-                    beratFixed
-                );
-
-                setTimeDisplay(
-                    time
-                );
-
-
-                addLog(
-                    `Berat masuk: ${beratFixed} Kg → Pack ${nomor}`
-                );
-
-
-                // =================================================
-                // TAMPILKAN SEMENTARA
-                // =================================================
-
-                setPackValues(
-                    prev => ({
-                        ...prev,
-                        [nomor]:
-                            beratFixed
-                    })
-                );
-
-
-                // =================================================
-                // SIMPAN
-                // =================================================
-
-                const berhasil =
-                    await simpanPack(
-                        nomor,
-                        weight
-                    );
-
-
-                // =================================================
-                // GAGAL
-                // =================================================
-
-                if (!berhasil) {
-
-                    setPackValues(
-                        prev => {
-
-                            const copy = {
-                                ...prev
-                            };
-
-                            delete copy[
-                                nomor
-                            ];
-
-                            return copy;
-                        }
-                    );
-
-
-                    addLog(
-                        `Pack ${nomor} tetap aktif karena penyimpanan gagal.`
-                    );
-
-
-                    return;
-                }
-
-
-                // =================================================
-                // BERHASIL
-                // =================================================
-
-                const next =
-                    nomor + 1;
-
-
-                setNextPack(
-                    next
-                );
-
-
-                // =================================================
-                // TAMBAH 5 BARIS
-                // =================================================
-
-                setTotalBoxes(
-                    prev => {
-
-                        if (
-                            next > prev
-                        ) {
-
-                            return prev + 5;
-                        }
-
-                        return prev;
-                    }
-                );
-
-
-                addLog(
-                    `Pack berikutnya: ${next}`
-                );
-            }
-        );
-
-
-        // =====================================================
-        // MQTT ERROR
-        // =====================================================
-
-        client.on(
-            'error',
-            err => {
-
-                addLog(
-                    `MQTT Error: ${err.message}`
-                );
-
-                setIsConnected(
-                    false
-                );
-            }
-        );
-
-
-        // =====================================================
-        // MQTT CLOSE
-        // =====================================================
-
-        client.on(
-            'close',
-            () => {
-
-                addLog(
-                    'MQTT terputus.'
-                );
-
-                setIsConnected(
-                    false
-                );
-            }
-        );
-
-
-        // =====================================================
-        // MQTT RECONNECT
-        // =====================================================
-
-        client.on(
-            'reconnect',
-            () => {
-
-                addLog(
-                    'MQTT mencoba reconnect...'
-                );
-            }
-        );
     };
 
 
     // =========================================================
-    // MQTT DISCONNECT
+    // STOP PANTAU
     // =========================================================
 
-    const disconnectMqtt = () => {
+    const disconnectTimbangan = () => {
 
         if (
-            mqttClientRef.current
+            pollingRef.current
         ) {
 
-            addLog(
-                'Memutuskan koneksi MQTT...'
+            clearInterval(
+                pollingRef.current
             );
 
-
-            mqttClientRef.current.end(
-                true
-            );
-
-
-            mqttClientRef.current =
+            pollingRef.current =
                 null;
         }
 
 
         setIsConnected(
             false
+        );
+
+
+        addLog(
+            'Pemantauan data timbang dihentikan.'
         );
     };
 
@@ -734,9 +657,11 @@ export default function TimbangAwal() {
 
     const handleConnect = async () => {
 
-        if (isConnected) {
+        if (
+            isConnected
+        ) {
 
-            disconnectMqtt();
+            disconnectTimbangan();
 
             return;
         }
@@ -750,7 +675,7 @@ export default function TimbangAwal() {
                 'Dokumen timbang sudah tersedia.'
             );
 
-            connectMqtt();
+            connectTimbangan();
 
             return;
         }
@@ -860,10 +785,6 @@ export default function TimbangAwal() {
                 );
 
 
-                // =============================================
-                // LOAD PACK
-                // =============================================
-
                 const values = {};
 
 
@@ -922,10 +843,6 @@ export default function TimbangAwal() {
                 );
 
 
-                // =============================================
-                // TAMPILKAN MINIMAL 5
-                // =============================================
-
                 setTotalBoxes(
                     Math.max(
                         5,
@@ -951,7 +868,7 @@ export default function TimbangAwal() {
                 );
 
 
-                connectMqtt();
+                connectTimbangan();
 
                 return;
             }
@@ -1097,10 +1014,6 @@ export default function TimbangAwal() {
                 );
 
 
-                // =============================================
-                // SELALU MULAI 5 BARIS
-                // =============================================
-
                 setTotalBoxes(
                     5
                 );
@@ -1116,7 +1029,7 @@ export default function TimbangAwal() {
                 );
 
 
-                connectMqtt();
+                connectTimbangan();
 
                 return;
             }
@@ -1250,6 +1163,7 @@ export default function TimbangAwal() {
             setJumlahBal(
                 dokumen.jumlah_bal ?? ''
             );
+
 
             setStatus(
                 dokumen.status
@@ -1510,8 +1424,6 @@ export default function TimbangAwal() {
             );
 
 
-            // Jangan mengecilkan window
-            // secara otomatis.
             setTotalBoxes(
                 prev =>
                     Math.max(
@@ -1611,7 +1523,7 @@ export default function TimbangAwal() {
             }
 
 
-            disconnectMqtt();
+            disconnectTimbangan();
 
 
             setStatus(
@@ -1690,7 +1602,7 @@ export default function TimbangAwal() {
 
 
     // =========================================================
-    // CLEANUP
+    // CLEANUP POLLING
     // =========================================================
 
     useEffect(() => {
@@ -1698,16 +1610,17 @@ export default function TimbangAwal() {
         return () => {
 
             if (
-                mqttClientRef.current
+                pollingRef.current
             ) {
 
-                mqttClientRef.current.end(
-                    true
+                clearInterval(
+                    pollingRef.current
                 );
 
-                mqttClientRef.current =
+                pollingRef.current =
                     null;
             }
+
         };
 
     }, []);
@@ -1820,8 +1733,6 @@ export default function TimbangAwal() {
                                     `}
                                 >
 
-                                    {/* NOMOR */}
-
                                     <div
                                         className="
                                             w-9 sm:w-10 md:w-11
@@ -1840,8 +1751,6 @@ export default function TimbangAwal() {
                                         {nomor}
                                     </div>
 
-
-                                    {/* BERAT */}
 
                                     <div
                                         className="
@@ -1875,8 +1784,6 @@ export default function TimbangAwal() {
 
                                     </div>
 
-
-                                    {/* DELETE */}
 
                                     <button
                                         type="button"
@@ -2062,7 +1969,7 @@ export default function TimbangAwal() {
                     </div>
 
 
-                    {/* MQTT */}
+                    {/* DATA TIMBANG LARAVEL */}
 
                     <div
                         className="
@@ -2085,15 +1992,15 @@ export default function TimbangAwal() {
                                 mb-1
                                 ${
                                     isConnected
-                                        ? 'text-green-500'
+                                        ? 'text-green-600'
                                         : 'text-gray-400'
                                 }
                             `}
                         >
                             {
                                 isConnected
-                                    ? 'Online'
-                                    : 'Offline'
+                                    ? 'ONLINE'
+                                    : 'OFFLINE'
                             }
                         </div>
 
@@ -2118,7 +2025,7 @@ export default function TimbangAwal() {
                                 mb-3
                             "
                         >
-                            Waktu MQTT:{' '}
+                            Waktu diterima Laravel:{' '}
 
                             <span
                                 className="
@@ -2158,8 +2065,8 @@ export default function TimbangAwal() {
                             >
                                 {
                                     isConnected
-                                        ? 'Disconnect'
-                                        : 'Connect'
+                                        ? 'Stop Pantau'
+                                        : 'Mulai Pantau'
                                 }
                             </button>
 
@@ -2221,7 +2128,7 @@ export default function TimbangAwal() {
 
 
             {/* =================================================
-                CARD 2 - PACK
+                CARD 2
             ================================================= */}
 
             <div
@@ -2236,8 +2143,6 @@ export default function TimbangAwal() {
                     space-y-3
                 "
             >
-
-                {/* HEADER CARD 2 */}
 
                 <div
                     className="
@@ -2355,8 +2260,6 @@ export default function TimbangAwal() {
                 </div>
 
 
-                {/* GRID */}
-
                 <div
                     className="
                         flex
@@ -2379,7 +2282,7 @@ export default function TimbangAwal() {
 
 
             {/* =================================================
-                CARD 3 - LOG
+                CARD 3
             ================================================= */}
 
             <div

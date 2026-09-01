@@ -35,14 +35,9 @@ return new class extends Migration
                 ->nullable()
                 ->index();
 
-            $table->string('jenis', 50);
-
-            $table->string('s_k', 100);
+            $table->string('aturan', 100);
 
             $table->unsignedInteger('jumlah_bal');
-
-            $table->decimal('tara', 12, 2)
-                ->default(0);
 
 
             /*
@@ -99,7 +94,7 @@ return new class extends Migration
             |--------------------------------------------------------------------------
             */
 
-            $table->index('jenis');
+            
         });
     }
 

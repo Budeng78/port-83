@@ -3,12 +3,9 @@
 namespace Modules\Business\Produksi\Primary\PosRajang\Models;
 
 use App\Models\BaseModel;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PrimaryPos1RajangWo extends BaseModel
 {
-    use SoftDeletes;
-
     /*
     |--------------------------------------------------------------------------
     | TABLE
@@ -27,10 +24,8 @@ class PrimaryPos1RajangWo extends BaseModel
     protected $fillable = [
         'tanggal_wo',
         'no_wo',
-        'jenis',
-        's_k',
+        'aturan',
         'jumlah_bal',
-        'tara',
         'status',
         'keterangan',
     ];
@@ -45,6 +40,23 @@ class PrimaryPos1RajangWo extends BaseModel
     protected $casts = [
         'tanggal_wo' => 'date',
         'jumlah_bal' => 'integer',
-        'tara'       => 'decimal:2',
     ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIP
+    |--------------------------------------------------------------------------
+    |
+    | 1 WO Header memiliki banyak WO Detail.
+    |
+    */
+
+    public function details()
+    {
+        return $this->hasMany(
+            PrimaryPos1RajangWoDetail::class,
+            'wo_id'
+        );
+    }
 }

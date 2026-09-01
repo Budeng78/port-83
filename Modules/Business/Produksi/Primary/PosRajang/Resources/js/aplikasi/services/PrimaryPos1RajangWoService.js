@@ -1,14 +1,12 @@
 import api from '@Modules/Platform/System/Resources/js/aplikasi/axios/axios';
 
-
 const BASE_URL = '/posrajang/wo';
-
 
 const PrimaryPos1RajangWoService = {
 
     /*
     |--------------------------------------------------------------------------
-    | GET LIST WO
+    | WO HEADER
     |--------------------------------------------------------------------------
     */
 
@@ -17,19 +15,13 @@ const PrimaryPos1RajangWoService = {
         const response = await api.get(
             BASE_URL,
             {
-                params
+                params,
             }
         );
 
         return response.data;
     },
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | GET WO DETAIL
-    |--------------------------------------------------------------------------
-    */
 
     async getById(id) {
 
@@ -47,12 +39,6 @@ const PrimaryPos1RajangWoService = {
     },
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE WO
-    |--------------------------------------------------------------------------
-    */
-
     async create(payload) {
 
         const response = await api.post(
@@ -63,12 +49,6 @@ const PrimaryPos1RajangWoService = {
         return response.data;
     },
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE WO
-    |--------------------------------------------------------------------------
-    */
 
     async update(id, payload) {
 
@@ -87,12 +67,6 @@ const PrimaryPos1RajangWoService = {
     },
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE WO
-    |--------------------------------------------------------------------------
-    */
-
     async delete(id) {
 
         if (!id) {
@@ -108,12 +82,6 @@ const PrimaryPos1RajangWoService = {
         return response.data;
     },
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | RESTORE WO
-    |--------------------------------------------------------------------------
-    */
 
     async restore(id) {
 
@@ -131,7 +99,155 @@ const PrimaryPos1RajangWoService = {
     },
 
 
-};
+    /*
+    |--------------------------------------------------------------------------
+    | WO DETAIL
+    |--------------------------------------------------------------------------
+    */
 
+    async getDetails(
+        woId,
+        params = {}
+    ) {
+
+        if (!woId) {
+            throw new Error(
+                'ID WO wajib diberikan.'
+            );
+        }
+
+        const response = await api.get(
+            `${BASE_URL}/${woId}/detail`,
+            {
+                params,
+            }
+        );
+
+        return response.data;
+    },
+
+
+    async getDetail(
+        woId,
+        detailId
+    ) {
+
+        if (!woId) {
+            throw new Error(
+                'ID WO wajib diberikan.'
+            );
+        }
+
+        if (!detailId) {
+            throw new Error(
+                'ID detail WO wajib diberikan.'
+            );
+        }
+
+        const response = await api.get(
+            `${BASE_URL}/${woId}/detail/${detailId}`
+        );
+
+        return response.data;
+    },
+
+
+    async createDetail(
+        woId,
+        payload
+    ) {
+
+        if (!woId) {
+            throw new Error(
+                'ID WO wajib diberikan.'
+            );
+        }
+
+        const response = await api.post(
+            `${BASE_URL}/${woId}/detail`,
+            payload
+        );
+
+        return response.data;
+    },
+
+
+    async updateDetail(
+        woId,
+        detailId,
+        payload
+    ) {
+
+        if (!woId) {
+            throw new Error(
+                'ID WO wajib diberikan.'
+            );
+        }
+
+        if (!detailId) {
+            throw new Error(
+                'ID detail WO wajib diberikan.'
+            );
+        }
+
+        const response = await api.put(
+            `${BASE_URL}/${woId}/detail/${detailId}`,
+            payload
+        );
+
+        return response.data;
+    },
+
+
+    async deleteDetail(
+        woId,
+        detailId
+    ) {
+
+        if (!woId) {
+            throw new Error(
+                'ID WO wajib diberikan.'
+            );
+        }
+
+        if (!detailId) {
+            throw new Error(
+                'ID detail WO wajib diberikan.'
+            );
+        }
+
+        const response = await api.delete(
+            `${BASE_URL}/${woId}/detail/${detailId}`
+        );
+
+        return response.data;
+    },
+
+
+    async restoreDetail(
+        woId,
+        detailId
+    ) {
+
+        if (!woId) {
+            throw new Error(
+                'ID WO wajib diberikan.'
+            );
+        }
+
+        if (!detailId) {
+            throw new Error(
+                'ID detail WO wajib diberikan.'
+            );
+        }
+
+        const response = await api.post(
+            `${BASE_URL}/${woId}/detail/${detailId}/restore`
+        );
+
+        return response.data;
+    },
+
+};
 
 export default PrimaryPos1RajangWoService;

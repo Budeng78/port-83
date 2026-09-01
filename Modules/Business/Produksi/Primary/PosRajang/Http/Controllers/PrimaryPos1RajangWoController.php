@@ -1,13 +1,13 @@
 <?php
 
 namespace Modules\Business\Produksi\Primary\PosRajang\Http\Controllers;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Modules\Business\Produksi\Primary\PosRajang\Models\PrimaryPos1RajangWo;
+use Modules\Business\Produksi\Primary\PosRajang\Models\PrimaryPos1RajangWoDetail;
 
 class PrimaryPos1RajangWoController extends Controller
 {
@@ -73,12 +73,9 @@ class PrimaryPos1RajangWoController extends Controller
         |
         */
 
-        if (
-            $request->boolean('trash')
-        ) {
+        if ($request->boolean('trash')) {
 
             $query->onlyTrashed();
-
         }
 
 
@@ -88,9 +85,7 @@ class PrimaryPos1RajangWoController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $query->orderByDesc(
-            'created_at'
-        );
+        $query->orderByDesc('created_at');
 
 
         /*
@@ -137,35 +132,63 @@ class PrimaryPos1RajangWoController extends Controller
     {
         $validated = $request->validate([
 
+            /*
+            |------------------------------------------------------------------
+            | NOMOR WO
+            |------------------------------------------------------------------
+            */
+
             'no_wo' => [
                 'required',
                 'string',
-                'max:100',
+                'max:50',
                 'unique:primary_pos1_rajang_wo,no_wo',
             ],
+
+
+            /*
+            |------------------------------------------------------------------
+            | TANGGAL WO
+            |------------------------------------------------------------------
+            */
 
             'tanggal_wo' => [
                 'nullable',
                 'date',
             ],
 
-            'jenis' => [
-                'nullable',
+
+            /*
+            |------------------------------------------------------------------
+            | ATURAN
+            |------------------------------------------------------------------
+            */
+
+            'aturan' => [
+                'required',
                 'string',
                 'max:100',
             ],
 
-            's_k' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
+
+            /*
+            |------------------------------------------------------------------
+            | JUMLAH BAL
+            |------------------------------------------------------------------
+            */
 
             'jumlah_bal' => [
-                'nullable',
+                'required',
                 'integer',
                 'min:1',
             ],
+
+
+            /*
+            |------------------------------------------------------------------
+            | STATUS
+            |------------------------------------------------------------------
+            */
 
             'status' => [
                 'nullable',
@@ -177,6 +200,13 @@ class PrimaryPos1RajangWoController extends Controller
                 ]),
             ],
 
+
+            /*
+            |------------------------------------------------------------------
+            | KETERANGAN
+            |------------------------------------------------------------------
+            */
+
             'keterangan' => [
                 'nullable',
                 'string',
@@ -185,9 +215,21 @@ class PrimaryPos1RajangWoController extends Controller
         ]);
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | DEFAULT STATUS
+        |--------------------------------------------------------------------------
+        */
+
         $validated['status'] =
             $validated['status'] ?? 'draft';
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | CREATE
+        |--------------------------------------------------------------------------
+        */
 
         $wo = PrimaryPos1RajangWo::create(
             $validated
@@ -234,74 +276,53 @@ class PrimaryPos1RajangWoController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function update(
-        Request $request,
-        PrimaryPos1RajangWo $wo
-    ): JsonResponse {
+   public function update(Request $request, string $id): JsonResponse
+    {
+        $wo = PrimaryPos1RajangWo::findOrFail($id);
 
         $validated = $request->validate([
-
             'no_wo' => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique(
-                    'primary_pos1_rajang_wo',
-                    'no_wo'
-                )->ignore($wo->id),
+                Rule::unique('primary_pos1_rajang_wo', 'no_wo')
+                    ->ignore($wo->id, 'id'),
             ],
 
             'tanggal_wo' => [
-                'nullable',
+                'required',
                 'date',
             ],
 
-            'jenis' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            's_k' => [
-                'nullable',
+            'aturan' => [
+                'required',
                 'string',
                 'max:100',
             ],
 
             'jumlah_bal' => [
-                'nullable',
+                'required',
                 'integer',
-                'min:1',
+                'min:0',
             ],
 
             'status' => [
-                'nullable',
-                Rule::in([
-                    'draft',
-                    'open',
-                    'closed',
-                    'cancelled',
-                ]),
+                'required',
+                'string',
+                'max:50',
             ],
 
             'keterangan' => [
                 'nullable',
                 'string',
             ],
-
         ]);
 
-
-        $wo->update(
-            $validated
-        );
-
+        $wo->update($validated);
 
         return response()->json([
             'success' => true,
-
             'message' => 'WO berhasil diperbarui.',
-
             'data' => $wo->fresh(),
         ]);
     }
@@ -318,19 +339,55 @@ class PrimaryPos1RajangWoController extends Controller
     |
     */
 
-    public function destroy(
-        PrimaryPos1RajangWo $wo
-    ): JsonResponse {
+public function destroy(string $id): JsonResponse
+{
+    DB::beginTransaction();
+
+    try {
+
+        $wo = PrimaryPos1RajangWo::query()
+            ->findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | SOFT DELETE SEMUA DETAIL
+        |--------------------------------------------------------------------------
+        */
+
+        PrimaryPos1RajangWoDetail::query()
+            ->where('wo_id', $wo->id)
+            ->delete();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SOFT DELETE WO HEADER
+        |--------------------------------------------------------------------------
+        */
 
         $wo->delete();
 
 
+        DB::commit();
+
         return response()->json([
             'success' => true,
-
-            'message' => 'WO berhasil dihapus.',
+            'message' => "WO {$wo->no_wo} berhasil dihapus.",
         ]);
+
+    } catch (\Throwable $e) {
+
+        DB::rollBack();
+
+        report($e);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal menghapus WO.',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 
 
     /*

@@ -5,7 +5,7 @@ require '/var/www/html/prototype/vendor/autoload.php';
 use PhpMqtt\Client\MqttClient;
 use PhpMqtt\Client\ConnectionSettings;
 
-$host = '192.168.1.102';
+$host = '192.168.4.222';
 $port = 1883;
 $clientId = 'container-subscriber';
 

@@ -1,46 +1,115 @@
 import React, {
     useCallback,
     useEffect,
+    useMemo,
     useState,
 } from 'react';
 
 import {
-    Plus,
+    ClipboardList,
     Search,
+    Plus,
     Edit,
     Trash2,
     RotateCcw,
     X,
-    RefreshCw,
-    FileText,
-    ClipboardList,
-    CheckCircle2,
-    Clock3,
-    Ban,
     Save,
+    RefreshCw,
+    Check,
+    AlertCircle,
+    ChevronRight,
+    Package,
+    CalendarDays,
+    Warehouse,
+    Scale,
+    FileText,
+    Eye,
 } from 'lucide-react';
 
 import PrimaryPos1RajangWoService
     from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/services/PrimaryPos1RajangWoService';
 
 
-export default function WoManagement() {
+/*
+|--------------------------------------------------------------------------
+| STATUS
+|--------------------------------------------------------------------------
+*/
+
+const STATUS_CONFIG = {
+    draft: {
+        label: 'Draft',
+        className: 'bg-amber-50 text-amber-700',
+    },
+
+    open: {
+        label: 'Open',
+        className: 'bg-blue-50 text-blue-700',
+    },
+
+    closed: {
+        label: 'Closed',
+        className: 'bg-emerald-50 text-emerald-700',
+    },
+
+    cancelled: {
+        label: 'Cancelled',
+        className: 'bg-rose-50 text-rose-700',
+    },
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| EMPTY FORM
+|--------------------------------------------------------------------------
+*/
+
+const EMPTY_WO_FORM = {
+    no_wo: '',
+    tanggal_wo: '',
+    aturan: '',
+    jumlah_bal: '',
+    status: 'draft',
+    keterangan: '',
+};
+
+
+const EMPTY_DETAIL_FORM = {
+    no_urut: '',
+    gudang: '',
+    jenis_tbk: '',
+    tahun: '',
+    s_k: '',
+    grade: '',
+    jml_bal: '',
+    tara: '',
+    bruto: '',
+    netto: '',
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| COMPONENT
+|--------------------------------------------------------------------------
+*/
+
+export default function WoRajang() {
 
     /*
     |--------------------------------------------------------------------------
-    | STATE DATA
+    | WO DATA
     |--------------------------------------------------------------------------
     */
 
     const [items, setItems] = useState([]);
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] =
+        useState(true);
 
-    const [saving, setSaving] = useState(false);
-
-    const [error, setError] = useState('');
-
-    const [success, setSuccess] = useState('');
+    const [saving, setSaving] =
+        useState(false);
 
 
     /*
@@ -49,11 +118,14 @@ export default function WoManagement() {
     |--------------------------------------------------------------------------
     */
 
-    const [search, setSearch] = useState('');
+    const [search, setSearch] =
+        useState('');
 
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] =
+        useState('all');
 
-    const [showTrash, setShowTrash] = useState(false);
+    const [showTrash, setShowTrash] =
+        useState(false);
 
 
     /*
@@ -62,195 +134,158 @@ export default function WoManagement() {
     |--------------------------------------------------------------------------
     */
 
-    const [page, setPage] = useState(1);
+    const [page, setPage] =
+        useState(1);
 
-    const [perPage, setPerPage] = useState(15);
+    const [perPage, setPerPage] =
+        useState(15);
 
-    const [pagination, setPagination] = useState({
-        current_page: 1,
-        last_page: 1,
-        total: 0,
-        from: 0,
-        to: 0,
-    });
+    const [pagination, setPagination] =
+        useState({
+            current_page: 1,
+            last_page: 1,
+            total: 0,
+            from: 0,
+            to: 0,
+        });
 
 
     /*
     |--------------------------------------------------------------------------
-    | MODAL
+    | ALERT
     |--------------------------------------------------------------------------
     */
 
-    const [showModal, setShowModal] = useState(false);
-
-    const [editingId, setEditingId] = useState(null);
+    const [alert, setAlert] =
+        useState(null);
 
 
     /*
     |--------------------------------------------------------------------------
-    | FORM
+    | WO MODAL
     |--------------------------------------------------------------------------
     */
 
-    const emptyForm = {
-        no_wo: '',
-        tanggal_wo: '',
-        jenis: '',
-        s_k: '',
-        jumlah_bal: '',
-        status: 'draft',
-        keterangan: '',
-    };
+    const [showWoModal, setShowWoModal] =
+        useState(false);
 
+    const [editingWoId, setEditingWoId] =
+        useState(null);
 
-    const [form, setForm] = useState({
-        ...emptyForm,
-    });
+    const [woForm, setWoForm] =
+        useState({
+            ...EMPTY_WO_FORM,
+        });
 
 
     /*
     |--------------------------------------------------------------------------
-    | HELPERS
+    | DETAIL MODAL
     |--------------------------------------------------------------------------
     */
 
-    const clearMessages = () => {
-        setError('');
-        setSuccess('');
-    };
+    const [selectedWo, setSelectedWo] =
+        useState(null);
+
+    const [details, setDetails] =
+        useState([]);
+
+    const [loadingDetails, setLoadingDetails] =
+        useState(false);
+
+    const [showDetailModal, setShowDetailModal] =
+        useState(false);
 
 
     /*
-     * IMPORTANT:
-     * Error handler dibuat aman terhadap:
-     *
-     * 1. Laravel validation:
-     *    {
-     *        message: "...",
-     *        errors: {
-     *            field: ["error"]
-     *        }
-     *    }
-     *
-     * 2. Laravel exception:
-     *    {
-     *        message: "SQLSTATE..."
-     *    }
-     *
-     * 3. Axios error:
-     *    err.response.data
-     *
-     * 4. Error biasa:
-     *    new Error(...)
-     */
+    |--------------------------------------------------------------------------
+    | DETAIL FORM MODAL
+    |--------------------------------------------------------------------------
+    */
 
-    const getErrorMessage = (err) => {
+    const [showDetailForm, setShowDetailForm] =
+        useState(false);
 
-        console.error('FULL ERROR OBJECT:', err);
+    const [editingDetailId, setEditingDetailId] =
+        useState(null);
 
-        const responseData =
-            err?.response?.data ?? null;
+    const [detailForm, setDetailForm] =
+        useState({
+            ...EMPTY_DETAIL_FORM,
+        });
 
 
-        /*
-         * Laravel validation errors
-         */
+    /*
+    |--------------------------------------------------------------------------
+    | ERROR HANDLER
+    |--------------------------------------------------------------------------
+    */
 
-        if (
-            responseData?.errors &&
-            typeof responseData.errors === 'object'
-        ) {
+    const getErrorMessage = useCallback(
+        (error) => {
 
-            const messages =
-                Object.values(
-                    responseData.errors
-                )
-                    .flat()
-                    .filter(Boolean);
+            const responseData =
+                error?.response?.data;
 
+            if (
+                responseData?.errors &&
+                typeof responseData.errors === 'object'
+            ) {
 
-            if (messages.length > 0) {
+                const messages =
+                    Object.values(
+                        responseData.errors
+                    )
+                        .flat()
+                        .filter(Boolean);
 
-                return messages.join(' ');
-
+                if (messages.length) {
+                    return messages.join(' ');
+                }
             }
 
-        }
+            if (
+                typeof responseData?.message === 'string' &&
+                responseData.message.trim()
+            ) {
+                return responseData.message;
+            }
 
+            if (
+                typeof responseData === 'string' &&
+                responseData.trim()
+            ) {
+                return responseData;
+            }
 
-        /*
-         * Laravel message
-         */
+            if (error?.response?.status) {
+                return `Server mengembalikan HTTP ${error.response.status}.`;
+            }
 
-        if (
-            typeof responseData?.message === 'string' &&
-            responseData.message.trim() !== ''
-        ) {
+            return (
+                error?.message ||
+                'Terjadi kesalahan. Silakan periksa log server.'
+            );
 
-            return responseData.message;
-
-        }
-
-
-        /*
-         * Jika backend mengirim error sebagai string
-         */
-
-        if (
-            typeof responseData === 'string' &&
-            responseData.trim() !== ''
-        ) {
-
-            return responseData;
-
-        }
-
-
-        /*
-         * Axios status fallback
-         */
-
-        if (
-            err?.response?.status
-        ) {
-
-            return `Server mengembalikan HTTP ${err.response.status}.`;
-
-        }
-
-
-        /*
-         * JavaScript Error
-         */
-
-        if (
-            typeof err?.message === 'string' &&
-            err.message.trim() !== ''
-        ) {
-
-            return err.message;
-
-        }
-
-
-        return 'Terjadi kesalahan. Silakan periksa log server.';
-    };
+        },
+        []
+    );
 
 
     /*
     |--------------------------------------------------------------------------
-    | LOAD DATA
+    | LOAD WO
     |--------------------------------------------------------------------------
     */
 
     const loadData = useCallback(
         async () => {
 
-            setLoading(true);
-
-            clearMessages();
-
             try {
+
+                setLoading(true);
+
+                setAlert(null);
 
                 const response =
                     await PrimaryPos1RajangWoService.getAll({
@@ -267,7 +302,9 @@ export default function WoManagement() {
                             statusFilter,
 
                         trash:
-                            showTrash ? 1 : 0,
+                            showTrash
+                                ? 1
+                                : 0,
 
                     });
 
@@ -280,7 +317,6 @@ export default function WoManagement() {
                         response?.message ||
                         'Gagal mengambil data WO.'
                     );
-
                 }
 
 
@@ -321,16 +357,23 @@ export default function WoManagement() {
 
                 });
 
-            } catch (err) {
+            } catch (error) {
 
                 console.error(
                     'WO LOAD ERROR:',
-                    err
+                    error
                 );
 
-                setError(
-                    getErrorMessage(err)
-                );
+                setAlert({
+
+                    type: 'error',
+
+                    message:
+                        getErrorMessage(
+                            error
+                        ),
+
+                });
 
                 setItems([]);
 
@@ -347,13 +390,14 @@ export default function WoManagement() {
             search,
             statusFilter,
             showTrash,
+            getErrorMessage,
         ]
     );
 
 
     /*
     |--------------------------------------------------------------------------
-    | INITIAL / FILTER LOAD
+    | INITIAL LOAD
     |--------------------------------------------------------------------------
     */
 
@@ -366,7 +410,7 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | SEARCH DELAY
+    | FILTER RESET
     |--------------------------------------------------------------------------
     */
 
@@ -379,11 +423,8 @@ export default function WoManagement() {
 
             }, 400);
 
-
         return () => {
-
             clearTimeout(timer);
-
         };
 
     }, [
@@ -396,22 +437,125 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | FORM CHANGE
+    | ALERT
     |--------------------------------------------------------------------------
     */
 
-    const handleChange = (
-        e
-    ) => {
+    const renderAlert = () => {
+
+        if (!alert) {
+            return null;
+        }
+
+        const success =
+            alert.type === 'success';
+
+        return (
+
+            <div
+                className={`
+                    rounded-2xl
+                    border
+                    px-4
+                    py-3
+                    shadow-sm
+                    ${
+                        success
+                            ? 'border-emerald-200 bg-emerald-50'
+                            : 'border-red-200 bg-red-50'
+                    }
+                `}
+            >
+
+                <div
+                    className="
+                        flex
+                        items-start
+                        gap-3
+                    "
+                >
+
+                    {success ? (
+
+                        <Check
+                            size={18}
+                            className="
+                                mt-0.5
+                                shrink-0
+                                text-emerald-600
+                            "
+                        />
+
+                    ) : (
+
+                        <AlertCircle
+                            size={18}
+                            className="
+                                mt-0.5
+                                shrink-0
+                                text-red-600
+                            "
+                        />
+
+                    )}
+
+
+                    <p
+                        className={`
+                            text-sm
+                            font-medium
+                            ${
+                                success
+                                    ? 'text-emerald-700'
+                                    : 'text-red-700'
+                            }
+                        `}
+                    >
+                        {alert.message}
+                    </p>
+
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setAlert(null)
+                        }
+                        className="
+                            ml-auto
+                            rounded-lg
+                            p-1
+                            text-slate-400
+                            hover:bg-white/60
+                        "
+                    >
+
+                        <X size={15} />
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        );
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | WO FORM
+    |--------------------------------------------------------------------------
+    */
+
+    const handleWoChange = (event) => {
 
         const {
             name,
             value,
-        } = e.target;
+        } = event.target;
 
-
-        setForm(prev => ({
-            ...prev,
+        setWoForm((current) => ({
+            ...current,
             [name]: value,
         }));
 
@@ -420,43 +564,40 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | OPEN CREATE
+    | OPEN CREATE WO
     |--------------------------------------------------------------------------
     */
 
-    const openCreate = () => {
+    const openCreateWo = () => {
 
-        clearMessages();
+        setAlert(null);
 
-        setEditingId(null);
+        setEditingWoId(null);
 
-        setForm({
-            ...emptyForm,
+        setWoForm({
+            ...EMPTY_WO_FORM,
         });
 
-        setShowModal(true);
+        setShowWoModal(true);
 
     };
 
 
     /*
     |--------------------------------------------------------------------------
-    | OPEN EDIT
+    | OPEN EDIT WO
     |--------------------------------------------------------------------------
     */
 
-    const openEdit = (
-        item
-    ) => {
+    const openEditWo = (item) => {
 
-        clearMessages();
+        setAlert(null);
 
-        setEditingId(
+        setEditingWoId(
             item.id
         );
 
-
-        setForm({
+        setWoForm({
 
             no_wo:
                 item.no_wo ?? '',
@@ -465,17 +606,11 @@ export default function WoManagement() {
                 item.tanggal_wo
                     ? String(
                         item.tanggal_wo
-                    ).substring(
-                        0,
-                        10
-                    )
+                    ).substring(0, 10)
                     : '',
 
-            jenis:
-                item.jenis ?? '',
-
-            s_k:
-                item.s_k ?? '',
+            aturan:
+                item.aturan ?? '',
 
             jumlah_bal:
                 item.jumlah_bal ?? '',
@@ -485,37 +620,33 @@ export default function WoManagement() {
                 'draft',
 
             keterangan:
-                item.keterangan ??
-                '',
+                item.keterangan ?? '',
 
         });
 
-
-        setShowModal(true);
+        setShowWoModal(true);
 
     };
 
 
     /*
     |--------------------------------------------------------------------------
-    | CLOSE MODAL
+    | CLOSE WO MODAL
     |--------------------------------------------------------------------------
     */
 
-    const closeModal = () => {
+    const closeWoModal = () => {
 
         if (saving) {
-
             return;
-
         }
 
-        setShowModal(false);
+        setShowWoModal(false);
 
-        setEditingId(null);
+        setEditingWoId(null);
 
-        setForm({
-            ...emptyForm,
+        setWoForm({
+            ...EMPTY_WO_FORM,
         });
 
     };
@@ -523,143 +654,102 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | SAVE
+    | SAVE WO
     |--------------------------------------------------------------------------
     */
 
-    const handleSubmit = async (
-        e
-    ) => {
+    const handleWoSubmit = async (event) => {
 
-        e.preventDefault();
+        event.preventDefault();
 
-        clearMessages();
+        setAlert(null);
 
 
-        /*
-         * VALIDASI NO WO
-         */
+        if (!woForm.no_wo.trim()) {
 
-        if (
-            !form.no_wo.trim()
-        ) {
-
-            setError(
-                'No. WO wajib diisi.'
-            );
+            setAlert({
+                type: 'error',
+                message: 'No. WO wajib diisi.',
+            });
 
             return;
-
         }
 
 
-        /*
-         * VALIDASI JUMLAH BAL
-         */
+        if (!woForm.aturan.trim()) {
+
+            setAlert({
+                type: 'error',
+                message: 'Aturan wajib diisi.',
+            });
+
+            return;
+        }
+
+
+        const jumlahBal =
+            Number(
+                woForm.jumlah_bal
+            );
+
 
         if (
-            form.jumlah_bal !== ''
+            !Number.isInteger(jumlahBal) ||
+            jumlahBal < 1
         ) {
 
-            const jumlahBal =
-                Number(
-                    form.jumlah_bal
-                );
+            setAlert({
+                type: 'error',
+                message:
+                    'Jumlah bal harus berupa angka bulat minimal 1.',
+            });
 
-
-            if (
-                !Number.isInteger(
-                    jumlahBal
-                ) ||
-                jumlahBal < 1
-            ) {
-
-                setError(
-                    'Jumlah bal harus berupa angka bulat minimal 1.'
-                );
-
-                return;
-
-            }
-
+            return;
         }
 
-
-        /*
-         * PAYLOAD
-         */
 
         const payload = {
 
             no_wo:
-                form.no_wo.trim(),
+                woForm.no_wo.trim(),
 
             tanggal_wo:
-                form.tanggal_wo ||
+                woForm.tanggal_wo ||
                 null,
 
-            jenis:
-                form.jenis.trim() ||
-                null,
-
-            s_k:
-                form.s_k.trim() ||
-                null,
+            aturan:
+                woForm.aturan.trim(),
 
             jumlah_bal:
-                form.jumlah_bal === ''
-                    ? null
-                    : Number(
-                        form.jumlah_bal
-                    ),
+                jumlahBal,
 
             status:
-                form.status,
+                woForm.status,
 
             keterangan:
-                form.keterangan.trim() ||
+                woForm.keterangan.trim() ||
                 null,
 
         };
 
 
-        /*
-         * DEBUG PAYLOAD
-         *
-         * Sementara kita tampilkan supaya
-         * mudah memastikan data yang dikirim.
-         */
-
-        
-
-
-        setSaving(true);
-
-
         try {
+
+            setSaving(true);
+
 
             let response;
 
 
-            /*
-             * UPDATE
-             */
-
-            if (editingId) {
+            if (editingWoId) {
 
                 response =
                     await PrimaryPos1RajangWoService.update(
-                        editingId,
+                        editingWoId,
                         payload
                     );
 
-            }
-
-            /*
-             * CREATE
-             */
-
-            else {
+            } else {
 
                 response =
                     await PrimaryPos1RajangWoService.create(
@@ -669,11 +759,7 @@ export default function WoManagement() {
             }
 
 
-            
-
-            if (
-                !response?.success
-            ) {
+            if (!response?.success) {
 
                 throw new Error(
                     response?.message ||
@@ -683,46 +769,46 @@ export default function WoManagement() {
             }
 
 
-            setSuccess(
-                editingId
-                    ? 'WO berhasil diperbarui.'
-                    : 'WO berhasil dibuat.'
-            );
+            setShowWoModal(false);
+
+            setEditingWoId(null);
+
+            setWoForm({
+                ...EMPTY_WO_FORM,
+            });
 
 
-            /*
-             * Tutup modal setelah sukses.
-             */
+            setAlert({
 
-            setShowModal(false);
+                type: 'success',
 
-            setEditingId(null);
+                message:
+                    editingWoId
+                        ? 'WO berhasil diperbarui.'
+                        : 'WO berhasil dibuat.',
 
-            setForm({
-                ...emptyForm,
             });
 
 
             await loadData();
 
-        } catch (err) {
+        } catch (error) {
 
             console.error(
                 'WO SAVE ERROR:',
-                err
+                error
             );
 
+            setAlert({
 
-            /*
-             * Jangan lagi memanggil Object.values()
-             * terhadap errors yang undefined.
-             */
+                type: 'error',
 
-            const message =
-                getErrorMessage(err);
+                message:
+                    getErrorMessage(
+                        error
+                    ),
 
-
-            setError(message);
+            });
 
         } finally {
 
@@ -735,110 +821,162 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | DELETE
+    | DELETE WO
     |--------------------------------------------------------------------------
     */
 
-    const handleDelete = async (
-        item
-    ) => {
+        const handleDeleteWo = async (item) => {
 
-        clearMessages();
+            if (!item?.id) {
+                setAlert({
+                    type: 'error',
+                    message: 'ID WO tidak ditemukan.',
+                });
 
-
-        const yakin =
-            window.confirm(
-                `Hapus WO "${item.no_wo}"?\n\n` +
-                `Data akan masuk ke tempat sampah dan masih dapat dipulihkan.`
-            );
+                return;
+            }
 
 
-        if (!yakin) {
-
-            return;
-
-        }
-
-
-        try {
-
-            setLoading(true);
+            const confirmed =
+                window.confirm(
+                    `Hapus WO "${item.no_wo}"?`
+                );
 
 
-            const response =
+            if (!confirmed) {
+                return;
+            }
+
+
+            try {
+
+                setLoading(true);
+
+                setAlert(null);
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | DELETE
+                |--------------------------------------------------------------------------
+                */
+
                 await PrimaryPos1RajangWoService.delete(
                     item.id
                 );
 
 
-            if (
-                !response?.success
-            ) {
+                /*
+                |--------------------------------------------------------------------------
+                | REFRESH DATA
+                |--------------------------------------------------------------------------
+                */
 
-                throw new Error(
-                    response?.message ||
-                    'Gagal menghapus WO.'
+                await loadData();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | SUCCESS
+                |--------------------------------------------------------------------------
+                */
+
+                setAlert({
+
+                    type: 'success',
+
+                    message:
+                        `WO "${item.no_wo}" berhasil dihapus.`,
+
+                });
+
+
+            } catch (error) {
+
+                console.error(
+                    'WO DELETE ERROR:',
+                    error
                 );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | ERROR MESSAGE
+                |--------------------------------------------------------------------------
+                */
+
+                let message =
+                    'Gagal menghapus WO.';
+
+
+                if (
+                    error?.response?.data?.message
+                ) {
+
+                    message =
+                        error.response.data.message;
+
+                } else if (
+                    error?.response?.data?.errors
+                ) {
+
+                    message =
+                        Object.values(
+                            error.response.data.errors
+                        )
+                            .flat()
+                            .join(' ');
+
+                } else if (
+                    error?.message
+                ) {
+
+                    message =
+                        error.message;
+
+                }
+
+
+                setAlert({
+
+                    type: 'error',
+
+                    message,
+
+                });
+
+
+            } finally {
+
+                setLoading(false);
 
             }
 
-
-            setSuccess(
-                `WO ${item.no_wo} berhasil dihapus.`
-            );
-
-
-            await loadData();
-
-        } catch (err) {
-
-            console.error(
-                'WO DELETE ERROR:',
-                err
-            );
-
-            setError(
-                getErrorMessage(err)
-            );
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    };
+        };
 
 
     /*
     |--------------------------------------------------------------------------
-    | RESTORE
+    | RESTORE WO
     |--------------------------------------------------------------------------
     */
 
-    const handleRestore = async (
-        item
-    ) => {
+    const handleRestoreWo = async (item) => {
 
-        clearMessages();
-
-
-        const yakin =
-            window.confirm(
+        if (
+            !window.confirm(
                 `Pulihkan WO "${item.no_wo}"?`
-            );
-
-
-        if (!yakin) {
-
+            )
+        ) {
             return;
-
         }
 
 
         try {
 
             setLoading(true);
+
+            setAlert(null);
 
 
             const response =
@@ -847,9 +985,7 @@ export default function WoManagement() {
                 );
 
 
-            if (
-                !response?.success
-            ) {
+            if (!response?.success) {
 
                 throw new Error(
                     response?.message ||
@@ -859,23 +995,35 @@ export default function WoManagement() {
             }
 
 
-            setSuccess(
-                `WO ${item.no_wo} berhasil dipulihkan.`
-            );
+            setAlert({
+
+                type: 'success',
+
+                message:
+                    `WO ${item.no_wo} berhasil dipulihkan.`,
+
+            });
 
 
             await loadData();
 
-        } catch (err) {
+        } catch (error) {
 
             console.error(
                 'WO RESTORE ERROR:',
-                err
+                error
             );
 
-            setError(
-                getErrorMessage(err)
-            );
+            setAlert({
+
+                type: 'error',
+
+                message:
+                    getErrorMessage(
+                        error
+                    ),
+
+            });
 
         } finally {
 
@@ -888,55 +1036,521 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | STATUS BADGE
+    | LOAD DETAIL
     |--------------------------------------------------------------------------
     */
 
-    const renderStatus = (
-        status
-    ) => {
+    const openDetail = async (wo) => {
 
-        const config = {
+        setSelectedWo(wo);
 
-            draft: {
-                label: 'Draft',
-                className:
-                    'bg-amber-100 text-amber-700',
-                icon: Clock3,
-            },
+        setDetails([]);
 
-            open: {
-                label: 'Open',
-                className:
-                    'bg-blue-100 text-blue-700',
-                icon: ClipboardList,
-            },
+        setAlert(null);
 
-            closed: {
-                label: 'Closed',
-                className:
-                    'bg-emerald-100 text-emerald-700',
-                icon: CheckCircle2,
-            },
+        setShowDetailModal(true);
 
-            cancelled: {
-                label: 'Cancelled',
-                className:
-                    'bg-rose-100 text-rose-700',
-                icon: Ban,
-            },
+        setLoadingDetails(true);
+
+
+        try {
+
+            const response =
+                await PrimaryPos1RajangWoService.getDetails(
+                    wo.id
+                );
+
+
+            if (!response?.success) {
+
+                throw new Error(
+                    response?.message ||
+                    'Gagal mengambil detail WO.'
+                );
+
+            }
+
+
+            const data =
+                response.data;
+
+
+            setDetails(
+                Array.isArray(data?.data)
+                    ? data.data
+                    : Array.isArray(data)
+                        ? data
+                        : []
+            );
+
+        } catch (error) {
+
+            console.error(
+                'DETAIL LOAD ERROR:',
+                error
+            );
+
+            setAlert({
+
+                type: 'error',
+
+                message:
+                    getErrorMessage(
+                        error
+                    ),
+
+            });
+
+        } finally {
+
+            setLoadingDetails(false);
+
+        }
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CLOSE DETAIL
+    |--------------------------------------------------------------------------
+    */
+
+    const closeDetail = () => {
+
+        if (saving) {
+            return;
+        }
+
+        setShowDetailModal(false);
+
+        setSelectedWo(null);
+
+        setDetails([]);
+
+        setShowDetailForm(false);
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DETAIL FORM
+    |--------------------------------------------------------------------------
+    */
+
+    const handleDetailChange = (event) => {
+
+        const {
+            name,
+            value,
+        } = event.target;
+
+        setDetailForm((current) => ({
+            ...current,
+            [name]: value,
+        }));
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPEN CREATE DETAIL
+    |--------------------------------------------------------------------------
+    */
+
+    const openCreateDetail = () => {
+
+        if (!selectedWo) {
+            return;
+        }
+
+        setEditingDetailId(null);
+
+        setDetailForm({
+
+            ...EMPTY_DETAIL_FORM,
+
+            no_urut:
+                details.length + 1,
+
+            tahun:
+                new Date()
+                    .getFullYear(),
+
+        });
+
+        setShowDetailForm(true);
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPEN EDIT DETAIL
+    |--------------------------------------------------------------------------
+    */
+
+    const openEditDetail = (item) => {
+
+        setEditingDetailId(
+            item.id
+        );
+
+        setDetailForm({
+
+            no_urut:
+                item.no_urut ?? '',
+
+            gudang:
+                item.gudang ?? '',
+
+            jenis_tbk:
+                item.jenis_tbk ?? '',
+
+            tahun:
+                item.tahun ?? '',
+
+            s_k:
+                item.s_k ?? '',
+
+            grade:
+                item.grade ?? '',
+
+            jml_bal:
+                item.jml_bal ?? '',
+
+            tara:
+                item.tara ?? '',
+
+            bruto:
+                item.bruto ?? '',
+
+            netto:
+                item.netto ?? '',
+
+        });
+
+        setShowDetailForm(true);
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CLOSE DETAIL FORM
+    |--------------------------------------------------------------------------
+    */
+
+    const closeDetailForm = () => {
+
+        if (saving) {
+            return;
+        }
+
+        setShowDetailForm(false);
+
+        setEditingDetailId(null);
+
+        setDetailForm({
+            ...EMPTY_DETAIL_FORM,
+        });
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAVE DETAIL
+    |--------------------------------------------------------------------------
+    */
+
+    const handleDetailSubmit = async (event) => {
+
+        event.preventDefault();
+
+        if (!selectedWo) {
+            return;
+        }
+
+
+        setAlert(null);
+
+
+        if (!detailForm.gudang.trim()) {
+
+            setAlert({
+                type: 'error',
+                message: 'Gudang wajib diisi.',
+            });
+
+            return;
+        }
+
+
+        if (!detailForm.jenis_tbk.trim()) {
+
+            setAlert({
+                type: 'error',
+                message: 'Jenis TBK wajib diisi.',
+            });
+
+            return;
+        }
+
+
+        if (!detailForm.s_k.trim()) {
+
+            setAlert({
+                type: 'error',
+                message: 'S/K wajib diisi.',
+            });
+
+            return;
+        }
+
+
+        if (!detailForm.grade.trim()) {
+
+            setAlert({
+                type: 'error',
+                message: 'Grade wajib diisi.',
+            });
+
+            return;
+        }
+
+
+        const payload = {
+
+            no_urut:
+                Number(
+                    detailForm.no_urut
+                ),
+
+            gudang:
+                detailForm.gudang.trim(),
+
+            jenis_tbk:
+                detailForm.jenis_tbk.trim(),
+
+            tahun:
+                Number(
+                    detailForm.tahun
+                ),
+
+            s_k:
+                detailForm.s_k.trim(),
+
+            grade:
+                detailForm.grade.trim(),
+
+            jml_bal:
+                Number(
+                    detailForm.jml_bal
+                ),
+
+            tara:
+                Number(
+                    detailForm.tara || 0
+                ),
+
+            bruto:
+                Number(
+                    detailForm.bruto || 0
+                ),
+
+            netto:
+                Number(
+                    detailForm.netto || 0
+                ),
 
         };
 
 
-        const current =
-            config[status] ||
-            config.draft;
+        try {
+
+            setSaving(true);
 
 
-        const Icon =
-            current.icon;
+            let response;
 
+
+            if (editingDetailId) {
+
+                response =
+                    await PrimaryPos1RajangWoService.updateDetail(
+                        selectedWo.id,
+                        editingDetailId,
+                        payload
+                    );
+
+            } else {
+
+                response =
+                    await PrimaryPos1RajangWoService.createDetail(
+                        selectedWo.id,
+                        payload
+                    );
+
+            }
+
+
+            if (!response?.success) {
+
+                throw new Error(
+                    response?.message ||
+                    'Gagal menyimpan detail WO.'
+                );
+
+            }
+
+
+            closeDetailForm();
+
+
+            await openDetail(
+                selectedWo
+            );
+
+
+            setAlert({
+
+                type: 'success',
+
+                message:
+                    editingDetailId
+                        ? 'Detail WO berhasil diperbarui.'
+                        : 'Detail WO berhasil ditambahkan.',
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                'DETAIL SAVE ERROR:',
+                error
+            );
+
+            setAlert({
+
+                type: 'error',
+
+                message:
+                    getErrorMessage(
+                        error
+                    ),
+
+            });
+
+        } finally {
+
+            setSaving(false);
+
+        }
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE DETAIL
+    |--------------------------------------------------------------------------
+    */
+
+    const handleDeleteDetail = async (item) => {
+
+        if (!selectedWo) {
+            return;
+        }
+
+
+        if (
+            !window.confirm(
+                `Hapus detail urutan ${item.no_urut}?`
+            )
+        ) {
+            return;
+        }
+
+
+        try {
+
+            setSaving(true);
+
+            setAlert(null);
+
+
+            const response =
+                await PrimaryPos1RajangWoService.deleteDetail(
+                    selectedWo.id,
+                    item.id
+                );
+
+
+            if (!response?.success) {
+
+                throw new Error(
+                    response?.message ||
+                    'Gagal menghapus detail.'
+                );
+
+            }
+
+
+            await openDetail(
+                selectedWo
+            );
+
+
+            setAlert({
+
+                type: 'success',
+
+                message:
+                    'Detail WO berhasil dihapus.',
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                'DETAIL DELETE ERROR:',
+                error
+            );
+
+            setAlert({
+
+                type: 'error',
+
+                message:
+                    getErrorMessage(
+                        error
+                    ),
+
+            });
+
+        } finally {
+
+            setSaving(false);
+
+        }
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    const renderStatus = (status) => {
+
+        const config =
+            STATUS_CONFIG[status] ||
+            STATUS_CONFIG.draft;
 
         return (
 
@@ -944,23 +1558,15 @@ export default function WoManagement() {
                 className={`
                     inline-flex
                     items-center
-                    gap-1
-                    px-2
-                    py-1
                     rounded-full
+                    px-2.5
+                    py-1
                     text-[10px]
                     font-bold
-                    uppercase
-                    ${current.className}
+                    ${config.className}
                 `}
             >
-
-                <Icon
-                    size={12}
-                />
-
-                {current.label}
-
+                {config.label}
             </span>
 
         );
@@ -970,40 +1576,27 @@ export default function WoManagement() {
 
     /*
     |--------------------------------------------------------------------------
-    | FORMAT DATE
+    | DATE
     |--------------------------------------------------------------------------
     */
 
-    const formatDate = (
-        value
-    ) => {
+    const formatDate = (value) => {
 
         if (!value) {
-
             return '-';
-
         }
-
 
         const date =
             new Date(value);
-
 
         if (
             Number.isNaN(
                 date.getTime()
             )
         ) {
-
-            return String(
-                value
-            ).substring(
-                0,
-                10
-            );
-
+            return String(value)
+                .substring(0, 10);
         }
-
 
         return date.toLocaleDateString(
             'id-ID',
@@ -1023,9 +1616,7 @@ export default function WoManagement() {
     |--------------------------------------------------------------------------
     */
 
-    const goToPage = (
-        target
-    ) => {
+    const goToPage = (target) => {
 
         const next =
             Math.max(
@@ -1036,10 +1627,638 @@ export default function WoManagement() {
                 )
             );
 
-
         setPage(next);
 
     };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MOBILE WO CARD
+    |--------------------------------------------------------------------------
+    */
+
+    const renderMobileCard = (item) => {
+
+        return (
+
+            <div
+                key={item.id}
+                className="
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-[#D9DEE8]
+                    bg-white
+                    shadow-sm
+                "
+            >
+
+                <div className="p-4">
+
+                    <div
+                        className="
+                            flex
+                            items-start
+                            gap-3
+                        "
+                    >
+
+                        <div
+                            className="
+                                flex
+                                h-11
+                                w-11
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-xl
+                                bg-[#EAF1FF]
+                                text-[#243A70]
+                            "
+                        >
+
+                            <ClipboardList
+                                size={20}
+                            />
+
+                        </div>
+
+
+                        <div
+                            className="
+                                min-w-0
+                                flex-1
+                            "
+                        >
+
+                            <div
+                                className="
+                                    flex
+                                    items-start
+                                    justify-between
+                                    gap-2
+                                "
+                            >
+
+                                <div className="min-w-0">
+
+                                    <h3
+                                        className="
+                                            truncate
+                                            text-sm
+                                            font-bold
+                                            text-[#243A70]
+                                        "
+                                    >
+                                        {item.no_wo}
+                                    </h3>
+
+                                    <p
+                                        className="
+                                            mt-0.5
+                                            text-[11px]
+                                            text-slate-400
+                                        "
+                                    >
+                                        {formatDate(
+                                            item.tanggal_wo
+                                        )}
+                                    </p>
+
+                                </div>
+
+                                {renderStatus(
+                                    item.status
+                                )}
+
+                            </div>
+
+
+                            <div
+                                className="
+                                    mt-3
+                                    grid
+                                    grid-cols-2
+                                    gap-2
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        rounded-xl
+                                        bg-slate-50
+                                        p-2.5
+                                    "
+                                >
+
+                                    <div
+                                        className="
+                                            text-[10px]
+                                            text-slate-400
+                                        "
+                                    >
+                                        Aturan
+                                    </div>
+
+                                    <div
+                                        className="
+                                            mt-1
+                                            truncate
+                                            text-xs
+                                            font-bold
+                                            text-slate-700
+                                        "
+                                    >
+                                        {item.aturan || '-'}
+                                    </div>
+
+                                </div>
+
+
+                                <div
+                                    className="
+                                        rounded-xl
+                                        bg-slate-50
+                                        p-2.5
+                                    "
+                                >
+
+                                    <div
+                                        className="
+                                            text-[10px]
+                                            text-slate-400
+                                        "
+                                    >
+                                        Jumlah Bal
+                                    </div>
+
+                                    <div
+                                        className="
+                                            mt-1
+                                            text-xs
+                                            font-bold
+                                            text-slate-700
+                                        "
+                                    >
+                                        {item.jumlah_bal ?? 0}
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        className="
+                            mt-4
+                            flex
+                            flex-wrap
+                            justify-end
+                            gap-2
+                            border-t
+                            border-slate-100
+                            pt-3
+                        "
+                    >
+
+                        {showTrash ? (
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleRestoreWo(
+                                        item
+                                    )
+                                }
+                                className="
+                                    flex
+                                    items-center
+                                    gap-1.5
+                                    rounded-xl
+                                    bg-emerald-50
+                                    px-3
+                                    py-2
+                                    text-xs
+                                    font-bold
+                                    text-emerald-700
+                                "
+                            >
+
+                                <RotateCcw
+                                    size={14}
+                                />
+
+                                Restore
+
+                            </button>
+
+                        ) : (
+
+                            <>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        openDetail(
+                                            item
+                                        )
+                                    }
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-1.5
+                                        rounded-xl
+                                        bg-[#EAF1FF]
+                                        px-3
+                                        py-2
+                                        text-xs
+                                        font-bold
+                                        text-[#243A70]
+                                    "
+                                >
+
+                                    <Eye
+                                        size={14}
+                                    />
+
+                                    Detail
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        openEditWo(
+                                            item
+                                        )
+                                    }
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-1.5
+                                        rounded-xl
+                                        bg-slate-100
+                                        px-3
+                                        py-2
+                                        text-xs
+                                        font-bold
+                                        text-slate-700
+                                    "
+                                >
+
+                                    <Edit
+                                        size={14}
+                                    />
+
+                                    Edit
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleDeleteWo(
+                                            item
+                                        )
+                                    }
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-1.5
+                                        rounded-xl
+                                        bg-rose-50
+                                        px-3
+                                        py-2
+                                        text-xs
+                                        font-bold
+                                        text-rose-600
+                                    "
+                                >
+
+                                    <Trash2
+                                        size={14}
+                                    />
+
+                                    Hapus
+
+                                </button>
+
+                            </>
+
+                        )}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        );
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DESKTOP WO ROWS
+    |--------------------------------------------------------------------------
+    */
+
+    const renderDesktopRows = () => {
+
+        return items.map((item) => (
+
+            <tr
+                key={item.id}
+                className="
+                    group
+                    border-b
+                    border-slate-100
+                    transition
+                    hover:bg-[#F8FAFD]
+                "
+            >
+
+                <td className="px-5 py-4">
+
+                    <div
+                        className="
+                            flex
+                            items-center
+                            gap-3
+                        "
+                    >
+
+                        <div
+                            className="
+                                flex
+                                h-9
+                                w-9
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-lg
+                                bg-[#EAF1FF]
+                                text-[#243A70]
+                            "
+                        >
+
+                            <ClipboardList
+                                size={17}
+                            />
+
+                        </div>
+
+
+                        <div>
+
+                            <div
+                                className="
+                                    font-semibold
+                                    text-[#243A70]
+                                "
+                            >
+                                {item.no_wo}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </td>
+
+
+                <td
+                    className="
+                        px-5
+                        py-4
+                        text-xs
+                        text-slate-600
+                    "
+                >
+                    {formatDate(
+                        item.tanggal_wo
+                    )}
+                </td>
+
+
+                <td
+                    className="
+                        px-5
+                        py-4
+                        text-xs
+                        font-medium
+                        text-slate-700
+                    "
+                >
+                    {item.aturan || '-'}
+                </td>
+
+
+                <td
+                    className="
+                        px-5
+                        py-4
+                        text-center
+                    "
+                >
+
+                    <span
+                        className="
+                            inline-flex
+                            min-w-8
+                            items-center
+                            justify-center
+                            rounded-lg
+                            bg-[#EAF1FF]
+                            px-2
+                            py-1
+                            text-xs
+                            font-bold
+                            text-[#243A70]
+                        "
+                    >
+                        {item.jumlah_bal ?? 0}
+                    </span>
+
+                </td>
+
+
+                <td className="px-5 py-4">
+
+                    {renderStatus(
+                        item.status
+                    )}
+
+                </td>
+
+
+                <td className="px-5 py-4">
+
+                    <div
+                        className="
+                            flex
+                            justify-end
+                            gap-1
+                        "
+                    >
+
+                        {showTrash ? (
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleRestoreWo(
+                                        item
+                                    )
+                                }
+                                className="
+                                    flex
+                                    items-center
+                                    gap-1.5
+                                    rounded-xl
+                                    px-3
+                                    py-2
+                                    text-xs
+                                    font-bold
+                                    text-emerald-700
+                                    hover:bg-emerald-50
+                                "
+                            >
+
+                                <RotateCcw
+                                    size={14}
+                                />
+
+                                Restore
+
+                            </button>
+
+                        ) : (
+
+                            <>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        openDetail(
+                                            item
+                                        )
+                                    }
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-1.5
+                                        rounded-xl
+                                        px-3
+                                        py-2
+                                        text-xs
+                                        font-bold
+                                        text-[#243A70]
+                                        hover:bg-[#EAF1FF]
+                                    "
+                                >
+
+                                    <Eye
+                                        size={14}
+                                    />
+
+                                    Detail
+
+                                    <ChevronRight
+                                        size={13}
+                                    />
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        openEditWo(
+                                            item
+                                        )
+                                    }
+                                    className="
+                                        rounded-lg
+                                        p-2
+                                        text-slate-500
+                                        hover:bg-slate-100
+                                        hover:text-[#243A70]
+                                    "
+                                    title="Edit"
+                                >
+
+                                    <Edit
+                                        size={15}
+                                    />
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleDeleteWo(
+                                            item
+                                        )
+                                    }
+                                    className="
+                                        rounded-lg
+                                        p-2
+                                        text-rose-500
+                                        hover:bg-rose-50
+                                    "
+                                    title="Hapus"
+                                >
+
+                                    <Trash2
+                                        size={15}
+                                    />
+
+                                </button>
+
+                            </>
+
+                        )}
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        ));
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DETAIL DATA TOTAL
+    |--------------------------------------------------------------------------
+    */
+
+    const detailTotalBal =
+        useMemo(
+            () =>
+                details.reduce(
+                    (total, item) =>
+                        total +
+                        Number(
+                            item.jml_bal || 0
+                        ),
+                    0
+                ),
+            [details]
+        );
 
 
     /*
@@ -1052,1565 +2271,70 @@ export default function WoManagement() {
 
         <div
             className="
-                max-w-7xl
-                mx-auto
-                w-full
-                p-4
-                md:p-6
-                space-y-4
+                min-h-full
+                bg-[#F3F4F6]
             "
         >
 
-            {/* =========================================================
-                HEADER
-            ========================================================== */}
-
             <div
                 className="
-                    bg-gradient-to-r
-                    from-blue-900
-                    via-indigo-800
-                    to-amber-600
-                    rounded-2xl
-                    p-5
-                    md:p-6
-                    text-white
-                    shadow-lg
-                    border
-                    border-slate-200
+                    mx-auto
+                    max-w-7xl
+                    space-y-4
+                    px-3
+                    py-4
+                    sm:space-y-5
+                    sm:px-5
+                    sm:py-6
+                    lg:px-8
                 "
             >
 
-                <div
-                    className="
-                        flex
-                        flex-col
-                        md:flex-row
-                        md:items-center
-                        md:justify-between
-                        gap-4
-                    "
-                >
-
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-4
-                        "
-                    >
-
-                        <div
-                            className="
-                                w-12
-                                h-12
-                                rounded-xl
-                                bg-white/90
-                                flex
-                                items-center
-                                justify-center
-                                shadow
-                            "
-                        >
-
-                            <ClipboardList
-                                size={26}
-                                className="
-                                    text-blue-900
-                                "
-                            />
-
-                        </div>
-
-
-                        <div>
-
-                            <h1
-                                className="
-                                    text-xl
-                                    md:text-2xl
-                                    font-extrabold
-                                "
-                            >
-                                Manage Work Order
-                            </h1>
-
-
-                            <p
-                                className="
-                                    text-xs
-                                    md:text-sm
-                                    text-blue-100
-                                    mt-1
-                                "
-                            >
-                                Primary Pos 1 — Rajang
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    {!showTrash && (
-
-                        <button
-                            type="button"
-                            onClick={
-                                openCreate
-                            }
-                            className="
-                                inline-flex
-                                items-center
-                                justify-center
-                                gap-2
-                                px-4
-                                py-2.5
-                                bg-white
-                                text-blue-900
-                                rounded-xl
-                                font-bold
-                                text-sm
-                                shadow
-                                hover:bg-slate-100
-                                active:scale-95
-                                transition
-                            "
-                        >
-
-                            <Plus
-                                size={18}
-                            />
-
-                            Tambah WO
-
-                        </button>
-
-                    )}
-
-                </div>
-
-            </div>
-
-
-            {/* =========================================================
-                ALERT ERROR
-            ========================================================== */}
-
-            {error && (
+                {/* =====================================================
+                    CARD 1
+                ====================================================== */}
 
                 <div
                     className="
-                        flex
-                        items-start
-                        justify-between
-                        gap-3
-                        p-3
-                        rounded-xl
+                        overflow-hidden
+                        rounded-2xl
                         border
-                        border-rose-200
-                        bg-rose-50
-                        text-rose-700
-                        text-sm
-                    "
-                >
-
-                    <div>
-
-                        <strong>
-                            Terjadi kesalahan
-                        </strong>
-
-                        <div
-                            className="
-                                mt-1
-                                whitespace-pre-wrap
-                                break-words
-                            "
-                        >
-                            {error}
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setError('')
-                        }
-                        className="
-                            p-1
-                            rounded-lg
-                            hover:bg-rose-100
-                            shrink-0
-                        "
-                    >
-
-                        <X
-                            size={16}
-                        />
-
-                    </button>
-
-                </div>
-
-            )}
-
-
-            {/* =========================================================
-                ALERT SUCCESS
-            ========================================================== */}
-
-            {success && (
-
-                <div
-                    className="
-                        flex
-                        items-center
-                        justify-between
-                        gap-3
-                        p-3
-                        rounded-xl
-                        border
-                        border-emerald-200
-                        bg-emerald-50
-                        text-emerald-700
-                        text-sm
+                        border-[#D9DEE8]
+                        bg-white
+                        shadow-sm
                     "
                 >
 
                     <div
                         className="
-                            flex
-                            items-center
-                            gap-2
-                        "
-                    >
-
-                        <CheckCircle2
-                            size={18}
-                        />
-
-                        {success}
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setSuccess('')
-                        }
-                        className="
-                            p-1
-                            rounded-lg
-                            hover:bg-emerald-100
-                        "
-                    >
-
-                        <X
-                            size={16}
-                        />
-
-                    </button>
-
-                </div>
-
-            )}
-
-
-            {/* =========================================================
-                FILTER CARD
-            ========================================================== */}
-
-            <div
-                className="
-                    bg-white
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    shadow-sm
-                    p-4
-                "
-            >
-
-                <div
-                    className="
-                        flex
-                        flex-col
-                        lg:flex-row
-                        lg:items-center
-                        gap-3
-                    "
-                >
-
-                    {/* SEARCH */}
-
-                    <div
-                        className="
-                            relative
-                            flex-1
-                        "
-                    >
-
-                        <Search
-                            size={18}
-                            className="
-                                absolute
-                                left-3
-                                top-1/2
-                                -translate-y-1/2
-                                text-slate-400
-                            "
-                        />
-
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={e =>
-                                setSearch(
-                                    e.target.value
-                                )
-                            }
-                            placeholder="Cari nomor WO..."
-                            className="
-                                w-full
-                                pl-10
-                                pr-4
-                                py-2.5
-                                border
-                                border-slate-300
-                                rounded-xl
-                                text-sm
-                                outline-none
-                                focus:ring-2
-                                focus:ring-blue-200
-                                focus:border-blue-500
-                            "
-                        />
-
-                    </div>
-
-
-                    {/* STATUS */}
-
-                    <select
-                        value={
-                            statusFilter
-                        }
-                        onChange={e => {
-
-                            setStatusFilter(
-                                e.target.value
-                            );
-
-                            setPage(1);
-
-                        }}
-                        className="
+                            h-1
                             w-full
-                            lg:w-44
-                            px-3
-                            py-2.5
-                            border
-                            border-slate-300
-                            rounded-xl
-                            text-sm
-                            bg-white
-                            outline-none
-                            focus:ring-2
-                            focus:ring-blue-200
-                            focus:border-blue-500
+                            bg-gradient-to-r
+                            from-[#243A70]
+                            via-[#4B8DF5]
+                            to-[#FF9D00]
                         "
-                    >
-
-                        <option value="all">
-                            Semua Status
-                        </option>
-
-                        <option value="draft">
-                            Draft
-                        </option>
-
-                        <option value="open">
-                            Open
-                        </option>
-
-                        <option value="closed">
-                            Closed
-                        </option>
-
-                        <option value="cancelled">
-                            Cancelled
-                        </option>
-
-                    </select>
-
-
-                    {/* TRASH */}
-
-                    <button
-                        type="button"
-                        onClick={() => {
-
-                            setShowTrash(
-                                prev => !prev
-                            );
-
-                            setPage(1);
-
-                        }}
-                        className={`
-                            inline-flex
-                            items-center
-                            justify-center
-                            gap-2
-                            px-4
-                            py-2.5
-                            rounded-xl
-                            font-bold
-                            text-sm
-                            transition
-                            ${
-                                showTrash
-                                    ? 'bg-rose-600 text-white hover:bg-rose-700'
-                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                            }
-                        `}
-                    >
-
-                        {showTrash ? (
-
-                            <>
-                                <RotateCcw
-                                    size={17}
-                                />
-
-                                Data Aktif
-                            </>
-
-                        ) : (
-
-                            <>
-                                <Trash2
-                                    size={17}
-                                />
-
-                                Trash
-                            </>
-
-                        )}
-
-                    </button>
-
-
-                    {/* REFRESH */}
-
-                    <button
-                        type="button"
-                        onClick={
-                            loadData
-                        }
-                        disabled={
-                            loading
-                        }
-                        className="
-                            inline-flex
-                            items-center
-                            justify-center
-                            gap-2
-                            px-3
-                            py-2.5
-                            rounded-xl
-                            bg-blue-50
-                            text-blue-700
-                            font-bold
-                            hover:bg-blue-100
-                            disabled:opacity-50
-                            transition
-                        "
-                        title="Refresh"
-                    >
-
-                        <RefreshCw
-                            size={17}
-                            className={
-                                loading
-                                    ? 'animate-spin'
-                                    : ''
-                            }
-                        />
-
-                        <span
-                            className="
-                                hidden
-                                sm:inline
-                            "
-                        >
-                            Refresh
-                        </span>
-
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            {/* =========================================================
-                CONTENT
-            ========================================================== */}
-
-            <div
-                className="
-                    bg-white
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    shadow-sm
-                    overflow-hidden
-                "
-            >
-
-                {/* CONTENT HEADER */}
-
-                <div
-                    className="
-                        px-4
-                        py-3
-                        border-b
-                        border-slate-200
-                        flex
-                        flex-col
-                        sm:flex-row
-                        sm:items-center
-                        sm:justify-between
-                        gap-2
-                    "
-                >
-
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-2
-                        "
-                    >
-
-                        <FileText
-                            size={18}
-                            className="
-                                text-blue-700
-                            "
-                        />
-
-                        <span
-                            className="
-                                font-bold
-                                text-slate-700
-                            "
-                        >
-                            {showTrash
-                                ? 'WO Terhapus'
-                                : 'Daftar Work Order'
-                            }
-                        </span>
-
-                    </div>
+                    />
 
 
                     <div
                         className="
-                            text-xs
-                            text-slate-500
-                        "
-                    >
-
-                        Menampilkan{' '}
-
-                        <strong>
-                            {pagination.from}
-                        </strong>
-
-                        {' - '}
-
-                        <strong>
-                            {pagination.to}
-                        </strong>
-
-                        {' dari '}
-
-                        <strong>
-                            {pagination.total}
-                        </strong>
-
-                        {' data'}
-
-                    </div>
-
-                </div>
-
-
-                {/* LOADING */}
-
-                {loading ? (
-
-                    <div
-                        className="
-                            py-16
                             flex
                             flex-col
-                            items-center
-                            justify-center
-                            text-slate-400
-                        "
-                    >
-
-                        <RefreshCw
-                            size={28}
-                            className="
-                                animate-spin
-                                mb-3
-                                text-blue-500
-                            "
-                        />
-
-                        <span
-                            className="
-                                text-sm
-                                font-medium
-                            "
-                        >
-                            Memuat data WO...
-                        </span>
-
-                    </div>
-
-                ) : items.length === 0 ? (
-
-                    /* EMPTY */
-
-                    <div
-                        className="
-                            py-16
-                            px-4
-                            text-center
-                            text-slate-400
+                            gap-4
+                            p-4
+                            sm:p-5
                         "
                     >
 
                         <div
                             className="
-                                mx-auto
-                                w-14
-                                h-14
-                                rounded-2xl
-                                bg-slate-100
-                                flex
-                                items-center
-                                justify-center
-                                mb-3
-                            "
-                        >
-
-                            <FileText
-                                size={26}
-                                className="
-                                    text-slate-400
-                                "
-                            />
-
-                        </div>
-
-
-                        <div
-                            className="
-                                font-bold
-                                text-slate-600
-                            "
-                        >
-                            Tidak ada data WO
-                        </div>
-
-
-                        <div
-                            className="
-                                text-xs
-                                mt-1
-                            "
-                        >
-                            {showTrash
-                                ? 'Belum ada WO di tempat sampah.'
-                                : 'Belum ada WO yang sesuai filter.'
-                            }
-                        </div>
-
-                    </div>
-
-                ) : (
-
-                    <>
-
-                        {/* =================================================
-                            DESKTOP TABLE
-                        ================================================== */}
-
-                        <div
-                            className="
-                                hidden
-                                md:block
-                                overflow-x-auto
-                            "
-                        >
-
-                            <table
-                                className="
-                                    w-full
-                                    text-sm
-                                "
-                            >
-
-                                <thead>
-
-                                    <tr
-                                        className="
-                                            bg-slate-50
-                                            border-b
-                                            border-slate-200
-                                        "
-                                    >
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-left
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            No. WO
-                                        </th>
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-left
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            Tanggal
-                                        </th>
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-left
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            Jenis
-                                        </th>
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-left
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            S / K
-                                        </th>
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-center
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            Bal
-                                        </th>
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-left
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            Status
-                                        </th>
-
-                                        <th
-                                            className="
-                                                px-4
-                                                py-3
-                                                text-right
-                                                text-xs
-                                                font-bold
-                                                text-slate-500
-                                                uppercase
-                                            "
-                                        >
-                                            Aksi
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-
-                                <tbody>
-
-                                    {items.map(
-                                        item => (
-
-                                            <tr
-                                                key={
-                                                    item.id
-                                                }
-                                                className="
-                                                    border-b
-                                                    border-slate-100
-                                                    hover:bg-blue-50/40
-                                                    transition
-                                                "
-                                            >
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                        font-bold
-                                                        text-blue-700
-                                                    "
-                                                >
-                                                    {item.no_wo}
-                                                </td>
-
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                        text-slate-600
-                                                    "
-                                                >
-                                                    {formatDate(
-                                                        item.tanggal_wo
-                                                    )}
-                                                </td>
-
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                        text-slate-700
-                                                    "
-                                                >
-                                                    {item.jenis ||
-                                                        '-'}
-                                                </td>
-
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                        text-slate-700
-                                                    "
-                                                >
-                                                    {item.s_k ||
-                                                        '-'}
-                                                </td>
-
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                        text-center
-                                                        font-bold
-                                                        text-slate-700
-                                                    "
-                                                >
-                                                    {item.jumlah_bal ??
-                                                        '-'}
-                                                </td>
-
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                    "
-                                                >
-                                                    {renderStatus(
-                                                        item.status
-                                                    )}
-                                                </td>
-
-
-                                                <td
-                                                    className="
-                                                        px-4
-                                                        py-3
-                                                    "
-                                                >
-
-                                                    <div
-                                                        className="
-                                                            flex
-                                                            justify-end
-                                                            items-center
-                                                            gap-1.5
-                                                        "
-                                                    >
-
-                                                        {showTrash ? (
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleRestore(
-                                                                        item
-                                                                    )
-                                                                }
-                                                                className="
-                                                                    inline-flex
-                                                                    items-center
-                                                                    gap-1
-                                                                    px-3
-                                                                    py-1.5
-                                                                    rounded-lg
-                                                                    bg-emerald-50
-                                                                    text-emerald-700
-                                                                    hover:bg-emerald-100
-                                                                    text-xs
-                                                                    font-bold
-                                                                "
-                                                            >
-
-                                                                <RotateCcw
-                                                                    size={14}
-                                                                />
-
-                                                                Restore
-
-                                                            </button>
-
-                                                        ) : (
-
-                                                            <>
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        openEdit(
-                                                                            item
-                                                                        )
-                                                                    }
-                                                                    className="
-                                                                        p-2
-                                                                        rounded-lg
-                                                                        bg-blue-50
-                                                                        text-blue-700
-                                                                        hover:bg-blue-100
-                                                                    "
-                                                                    title="Edit WO"
-                                                                >
-
-                                                                    <Edit
-                                                                        size={15}
-                                                                    />
-
-                                                                </button>
-
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            item
-                                                                        )
-                                                                    }
-                                                                    className="
-                                                                        p-2
-                                                                        rounded-lg
-                                                                        bg-rose-50
-                                                                        text-rose-600
-                                                                        hover:bg-rose-100
-                                                                    "
-                                                                    title="Hapus WO"
-                                                                >
-
-                                                                    <Trash2
-                                                                        size={15}
-                                                                    />
-
-                                                                </button>
-
-                                                            </>
-
-                                                        )}
-
-                                                    </div>
-
-                                                </td>
-
-                                            </tr>
-
-                                        )
-                                    )}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-
-                        {/* =================================================
-                            MOBILE CARD
-                        ================================================== */}
-
-                        <div
-                            className="
-                                md:hidden
-                                divide-y
-                                divide-slate-100
-                            "
-                        >
-
-                            {items.map(
-                                item => (
-
-                                    <div
-                                        key={
-                                            item.id
-                                        }
-                                        className="
-                                            p-4
-                                            space-y-3
-                                        "
-                                    >
-
-                                        <div
-                                            className="
-                                                flex
-                                                justify-between
-                                                items-start
-                                                gap-3
-                                            "
-                                        >
-
-                                            <div>
-
-                                                <div
-                                                    className="
-                                                        text-base
-                                                        font-extrabold
-                                                        text-blue-700
-                                                    "
-                                                >
-                                                    {item.no_wo}
-                                                </div>
-
-
-                                                <div
-                                                    className="
-                                                        text-xs
-                                                        text-slate-500
-                                                        mt-1
-                                                    "
-                                                >
-                                                    {formatDate(
-                                                        item.tanggal_wo
-                                                    )}
-                                                </div>
-
-                                            </div>
-
-
-                                            {renderStatus(
-                                                item.status
-                                            )}
-
-                                        </div>
-
-
-                                        <div
-                                            className="
-                                                grid
-                                                grid-cols-2
-                                                gap-2
-                                                text-xs
-                                            "
-                                        >
-
-                                            <div
-                                                className="
-                                                    bg-slate-50
-                                                    rounded-lg
-                                                    p-2
-                                                "
-                                            >
-
-                                                <div
-                                                    className="
-                                                        text-slate-400
-                                                    "
-                                                >
-                                                    Jenis
-                                                </div>
-
-                                                <div
-                                                    className="
-                                                        font-bold
-                                                        text-slate-700
-                                                        mt-1
-                                                    "
-                                                >
-                                                    {item.jenis ||
-                                                        '-'}
-                                                </div>
-
-                                            </div>
-
-
-                                            <div
-                                                className="
-                                                    bg-slate-50
-                                                    rounded-lg
-                                                    p-2
-                                                "
-                                            >
-
-                                                <div
-                                                    className="
-                                                        text-slate-400
-                                                    "
-                                                >
-                                                    S / K
-                                                </div>
-
-                                                <div
-                                                    className="
-                                                        font-bold
-                                                        text-slate-700
-                                                        mt-1
-                                                    "
-                                                >
-                                                    {item.s_k ||
-                                                        '-'}
-                                                </div>
-
-                                            </div>
-
-
-                                            <div
-                                                className="
-                                                    bg-slate-50
-                                                    rounded-lg
-                                                    p-2
-                                                "
-                                            >
-
-                                                <div
-                                                    className="
-                                                        text-slate-400
-                                                    "
-                                                >
-                                                    Jumlah Bal
-                                                </div>
-
-                                                <div
-                                                    className="
-                                                        font-bold
-                                                        text-slate-700
-                                                        mt-1
-                                                    "
-                                                >
-                                                    {item.jumlah_bal ??
-                                                        '-'}
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-
-                                        <div
-                                            className="
-                                                flex
-                                                justify-end
-                                                gap-2
-                                            "
-                                        >
-
-                                            {showTrash ? (
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleRestore(
-                                                            item
-                                                        )
-                                                    }
-                                                    className="
-                                                        inline-flex
-                                                        items-center
-                                                        gap-1.5
-                                                        px-3
-                                                        py-2
-                                                        rounded-lg
-                                                        bg-emerald-50
-                                                        text-emerald-700
-                                                        font-bold
-                                                        text-xs
-                                                    "
-                                                >
-
-                                                    <RotateCcw
-                                                        size={14}
-                                                    />
-
-                                                    Restore
-
-                                                </button>
-
-                                            ) : (
-
-                                                <>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            openEdit(
-                                                                item
-                                                            )
-                                                        }
-                                                        className="
-                                                            inline-flex
-                                                            items-center
-                                                            gap-1.5
-                                                            px-3
-                                                            py-2
-                                                            rounded-lg
-                                                            bg-blue-50
-                                                            text-blue-700
-                                                            font-bold
-                                                            text-xs
-                                                        "
-                                                    >
-
-                                                        <Edit
-                                                            size={14}
-                                                        />
-
-                                                        Edit
-
-                                                    </button>
-
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                item
-                                                            )
-                                                        }
-                                                        className="
-                                                            inline-flex
-                                                            items-center
-                                                            gap-1.5
-                                                            px-3
-                                                            py-2
-                                                            rounded-lg
-                                                            bg-rose-50
-                                                            text-rose-600
-                                                            font-bold
-                                                            text-xs
-                                                        "
-                                                    >
-
-                                                        <Trash2
-                                                            size={14}
-                                                        />
-
-                                                        Hapus
-
-                                                    </button>
-
-                                                </>
-
-                                            )}
-
-                                        </div>
-
-                                    </div>
-
-                                )
-                            )}
-
-                        </div>
-
-                    </>
-
-                )}
-
-
-                {/* =========================================================
-                    PAGINATION
-                ========================================================== */}
-
-                {!loading &&
-                    items.length > 0 && (
-
-                        <div
-                            className="
-                                px-4
-                                py-3
-                                border-t
-                                border-slate-200
                                 flex
                                 flex-col
+                                gap-4
                                 sm:flex-row
                                 sm:items-center
                                 sm:justify-between
-                                gap-3
-                            "
-                        >
-
-                            <div
-                                className="
-                                    flex
-                                    items-center
-                                    gap-2
-                                    text-xs
-                                    text-slate-500
-                                "
-                            >
-
-                                <span>
-                                    Per halaman
-                                </span>
-
-                                <select
-                                    value={
-                                        perPage
-                                    }
-                                    onChange={e => {
-
-                                        setPerPage(
-                                            Number(
-                                                e.target.value
-                                            )
-                                        );
-
-                                        setPage(
-                                            1
-                                        );
-
-                                    }}
-                                    className="
-                                        border
-                                        border-slate-300
-                                        rounded-lg
-                                        px-2
-                                        py-1
-                                        bg-white
-                                    "
-                                >
-
-                                    <option value="10">
-                                        10
-                                    </option>
-
-                                    <option value="15">
-                                        15
-                                    </option>
-
-                                    <option value="25">
-                                        25
-                                    </option>
-
-                                    <option value="50">
-                                        50
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            <div
-                                className="
-                                    flex
-                                    items-center
-                                    gap-1
-                                "
-                            >
-
-                                <button
-                                    type="button"
-                                    disabled={
-                                        page <= 1
-                                    }
-                                    onClick={() =>
-                                        goToPage(
-                                            page - 1
-                                        )
-                                    }
-                                    className="
-                                        px-3
-                                        py-1.5
-                                        rounded-lg
-                                        border
-                                        border-slate-300
-                                        text-xs
-                                        font-bold
-                                        disabled:opacity-40
-                                        disabled:cursor-not-allowed
-                                        hover:bg-slate-50
-                                    "
-                                >
-                                    Sebelumnya
-                                </button>
-
-
-                                <span
-                                    className="
-                                        px-3
-                                        py-1.5
-                                        text-xs
-                                        font-bold
-                                        text-slate-600
-                                    "
-                                >
-                                    {pagination.current_page}
-                                    {' / '}
-                                    {pagination.last_page}
-                                </span>
-
-
-                                <button
-                                    type="button"
-                                    disabled={
-                                        page >=
-                                        pagination.last_page
-                                    }
-                                    onClick={() =>
-                                        goToPage(
-                                            page + 1
-                                        )
-                                    }
-                                    className="
-                                        px-3
-                                        py-1.5
-                                        rounded-lg
-                                        border
-                                        border-slate-300
-                                        text-xs
-                                        font-bold
-                                        disabled:opacity-40
-                                        disabled:cursor-not-allowed
-                                        hover:bg-slate-50
-                                    "
-                                >
-                                    Berikutnya
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    )}
-
-            </div>
-
-
-            {/* =========================================================
-                MODAL CREATE / EDIT
-            ========================================================== */}
-
-            {showModal && (
-
-                <div
-                    className="
-                        fixed
-                        inset-0
-                        z-50
-                        bg-slate-900/50
-                        backdrop-blur-sm
-                        flex
-                        items-center
-                        justify-center
-                        p-4
-                    "
-                    onMouseDown={e => {
-
-                        if (
-                            e.target ===
-                            e.currentTarget
-                        ) {
-
-                            closeModal();
-
-                        }
-
-                    }}
-                >
-
-                    <div
-                        className="
-                            w-full
-                            max-w-2xl
-                            bg-white
-                            rounded-2xl
-                            shadow-2xl
-                            overflow-hidden
-                        "
-                    >
-
-                        {/* MODAL HEADER */}
-
-                        <div
-                            className="
-                                bg-gradient-to-r
-                                from-blue-900
-                                to-indigo-700
-                                px-5
-                                py-4
-                                text-white
-                                flex
-                                items-center
-                                justify-between
                             "
                         >
 
@@ -2624,52 +2348,46 @@ export default function WoManagement() {
 
                                 <div
                                     className="
-                                        w-9
-                                        h-9
-                                        rounded-lg
-                                        bg-white/15
                                         flex
+                                        h-11
+                                        w-11
+                                        shrink-0
                                         items-center
                                         justify-center
+                                        rounded-xl
+                                        bg-[#243A70]
+                                        text-white
+                                        shadow-sm
                                     "
                                 >
 
-                                    {editingId ? (
-
-                                        <Edit
-                                            size={19}
-                                        />
-
-                                    ) : (
-
-                                        <Plus
-                                            size={20}
-                                        />
-
-                                    )}
+                                    <ClipboardList
+                                        size={21}
+                                    />
 
                                 </div>
 
 
                                 <div>
 
-                                    <h2
+                                    <h1
                                         className="
+                                            text-lg
                                             font-bold
-                                            text-base
+                                            tracking-tight
+                                            text-[#243A70]
+                                            sm:text-xl
                                         "
                                     >
-                                        {editingId
-                                            ? 'Edit Work Order'
-                                            : 'Tambah Work Order'
-                                        }
-                                    </h2>
-
+                                        Work Order Rajang
+                                    </h1>
 
                                     <p
                                         className="
-                                            text-[11px]
-                                            text-blue-100
+                                            mt-0.5
+                                            text-xs
+                                            text-slate-500
+                                            sm:text-sm
                                         "
                                     >
                                         Primary Pos 1 — Rajang
@@ -2680,40 +2398,829 @@ export default function WoManagement() {
                             </div>
 
 
-                            <button
-                                type="button"
-                                onClick={
-                                    closeModal
-                                }
-                                disabled={
-                                    saving
-                                }
+                            {!showTrash && (
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        openCreateWo
+                                    }
+                                    className="
+                                        flex
+                                        w-full
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-xl
+                                        bg-[#243A70]
+                                        px-4
+                                        py-2.5
+                                        text-sm
+                                        font-bold
+                                        text-white
+                                        shadow-sm
+                                        transition
+                                        hover:bg-[#1D315F]
+                                        active:scale-[0.98]
+                                        sm:w-auto
+                                    "
+                                >
+
+                                    <Plus
+                                        size={17}
+                                    />
+
+                                    Tambah WO
+
+                                </button>
+
+                            )}
+
+                        </div>
+
+
+                        {/* SEARCH */}
+
+                        <div
+                            className="
+                                flex
+                                flex-col
+                                gap-2
+                                sm:flex-row
+                            "
+                        >
+
+                            <div
                                 className="
-                                    p-2
-                                    rounded-lg
-                                    hover:bg-white/10
-                                    disabled:opacity-40
+                                    relative
+                                    min-w-0
+                                    flex-1
                                 "
                             >
 
-                                <X
-                                    size={19}
+                                <Search
+                                    size={17}
+                                    className="
+                                        absolute
+                                        left-3
+                                        top-1/2
+                                        -translate-y-1/2
+                                        text-slate-400
+                                    "
                                 />
+
+                                <input
+                                    type="search"
+                                    value={search}
+                                    onChange={(e) =>
+                                        setSearch(
+                                            e.target.value
+                                        )
+                                    }
+                                    placeholder="Cari nomor WO, aturan..."
+                                    className="
+                                        w-full
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        py-2.5
+                                        pl-10
+                                        pr-10
+                                        text-sm
+                                        text-slate-700
+                                        outline-none
+                                        transition
+                                        placeholder:text-slate-400
+                                        focus:border-[#4B8DF5]
+                                        focus:bg-white
+                                        focus:ring-2
+                                        focus:ring-[#DCE9FF]
+                                    "
+                                />
+
+                                {search && (
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setSearch('')
+                                        }
+                                        className="
+                                            absolute
+                                            right-3
+                                            top-1/2
+                                            -translate-y-1/2
+                                            rounded-md
+                                            p-1
+                                            text-slate-400
+                                            hover:bg-slate-100
+                                        "
+                                    >
+
+                                        <X
+                                            size={15}
+                                        />
+
+                                    </button>
+
+                                )}
+
+                            </div>
+
+
+                            <select
+                                value={
+                                    statusFilter
+                                }
+                                onChange={(e) => {
+
+                                    setStatusFilter(
+                                        e.target.value
+                                    );
+
+                                    setPage(1);
+
+                                }}
+                                className="
+                                    w-full
+                                    rounded-xl
+                                    border
+                                    border-slate-200
+                                    bg-slate-50
+                                    px-3
+                                    py-2.5
+                                    text-sm
+                                    text-slate-700
+                                    outline-none
+                                    focus:border-[#4B8DF5]
+                                    sm:w-40
+                                "
+                            >
+
+                                <option value="all">
+                                    Semua Status
+                                </option>
+
+                                <option value="draft">
+                                    Draft
+                                </option>
+
+                                <option value="open">
+                                    Open
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                                <option value="cancelled">
+                                    Cancelled
+                                </option>
+
+                            </select>
+
+
+                            <button
+                                type="button"
+                                onClick={() => {
+
+                                    setShowTrash(
+                                        (current) =>
+                                            !current
+                                    );
+
+                                    setPage(1);
+
+                                }}
+                                className={`
+                                    flex
+                                    items-center
+                                    justify-center
+                                    gap-2
+                                    rounded-xl
+                                    px-4
+                                    py-2.5
+                                    text-xs
+                                    font-bold
+                                    ${
+                                        showTrash
+                                            ? 'bg-rose-600 text-white'
+                                            : 'bg-slate-100 text-slate-700'
+                                    }
+                                `}
+                            >
+
+                                {showTrash ? (
+
+                                    <>
+                                        <RotateCcw
+                                            size={15}
+                                        />
+
+                                        Data Aktif
+                                    </>
+
+                                ) : (
+
+                                    <>
+                                        <Trash2
+                                            size={15}
+                                        />
+
+                                        Trash
+                                    </>
+
+                                )}
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                onClick={
+                                    loadData
+                                }
+                                disabled={
+                                    loading
+                                }
+                                className="
+                                    flex
+                                    items-center
+                                    justify-center
+                                    gap-2
+                                    rounded-xl
+                                    bg-[#EAF1FF]
+                                    px-4
+                                    py-2.5
+                                    text-xs
+                                    font-bold
+                                    text-[#243A70]
+                                    disabled:opacity-50
+                                "
+                            >
+
+                                <RefreshCw
+                                    size={15}
+                                    className={
+                                        loading
+                                            ? 'animate-spin'
+                                            : ''
+                                    }
+                                />
+
+                                Refresh
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {/* ALERT */}
+
+                {alert &&
+                    renderAlert()}
+
+
+                {/* =====================================================
+                    CARD 2 — WO GRID
+                ====================================================== */}
+
+                <div
+                    className="
+                        overflow-hidden
+                        rounded-2xl
+                        border
+                        border-[#D9DEE8]
+                        bg-white
+                        shadow-sm
+                    "
+                >
+
+                    <div
+                        className="
+                            flex
+                            flex-col
+                            gap-2
+                            border-b
+                            border-[#D9DEE8]
+                            px-4
+                            py-3
+                            sm:flex-row
+                            sm:items-center
+                            sm:justify-between
+                            sm:px-5
+                        "
+                    >
+
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-2
+                            "
+                        >
+
+                            <FileText
+                                size={17}
+                                className="text-[#243A70]"
+                            />
+
+                            <span
+                                className="
+                                    text-sm
+                                    font-bold
+                                    text-[#243A70]
+                                "
+                            >
+                                {showTrash
+                                    ? 'WO Terhapus'
+                                    : 'Daftar Work Order'}
+                            </span>
+
+                        </div>
+
+
+                        <span
+                            className="
+                                text-[11px]
+                                text-slate-400
+                            "
+                        >
+                            {pagination.from} - {pagination.to}
+                            {' dari '}
+                            {pagination.total} data
+                        </span>
+
+                    </div>
+
+
+                    {loading ? (
+
+                        <div
+                            className="
+                                flex
+                                min-h-[300px]
+                                flex-col
+                                items-center
+                                justify-center
+                            "
+                        >
+
+                            <RefreshCw
+                                size={28}
+                                className="
+                                    mb-3
+                                    animate-spin
+                                    text-[#243A70]
+                                "
+                            />
+
+                            <p
+                                className="
+                                    text-sm
+                                    text-slate-500
+                                "
+                            >
+                                Memuat data WO...
+                            </p>
+
+                        </div>
+
+                    ) : items.length === 0 ? (
+
+                        <div
+                            className="
+                                px-5
+                                py-14
+                                text-center
+                            "
+                        >
+
+                            <div
+                                className="
+                                    mx-auto
+                                    flex
+                                    h-12
+                                    w-12
+                                    items-center
+                                    justify-center
+                                    rounded-xl
+                                    bg-[#EAF1FF]
+                                    text-[#243A70]
+                                "
+                            >
+
+                                <ClipboardList
+                                    size={22}
+                                />
+
+                            </div>
+
+                            <h3
+                                className="
+                                    mt-3
+                                    text-sm
+                                    font-bold
+                                    text-[#243A70]
+                                "
+                            >
+                                Tidak ada Work Order
+                            </h3>
+
+                            <p
+                                className="
+                                    mt-1
+                                    text-xs
+                                    text-slate-400
+                                "
+                            >
+                                Belum ada data WO yang sesuai.
+                            </p>
+
+                        </div>
+
+                    ) : (
+
+                        <>
+
+                            {/* MOBILE */}
+
+                            <div
+                                className="
+                                    space-y-2.5
+                                    p-3
+                                    md:hidden
+                                "
+                            >
+
+                                {items.map(
+                                    renderMobileCard
+                                )}
+
+                            </div>
+
+
+                            {/* DESKTOP */}
+
+                            <div
+                                className="
+                                    hidden
+                                    overflow-x-auto
+                                    md:block
+                                "
+                            >
+
+                                <table
+                                    className="
+                                        min-w-full
+                                    "
+                                >
+
+                                    <thead>
+
+                                        <tr
+                                            className="
+                                                border-b
+                                                border-[#D9DEE8]
+                                                bg-[#F8FAFD]
+                                            "
+                                        >
+
+                                            <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#243A70]">
+                                                No. WO
+                                            </th>
+
+                                            <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#243A70]">
+                                                Tanggal
+                                            </th>
+
+                                            <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#243A70]">
+                                                Aturan
+                                            </th>
+
+                                            <th className="px-5 py-3.5 text-center text-[11px] font-bold uppercase tracking-wider text-[#243A70]">
+                                                Bal
+                                            </th>
+
+                                            <th className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#243A70]">
+                                                Status
+                                            </th>
+
+                                            <th className="px-5 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-[#243A70]">
+                                                Aksi
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+
+                                    <tbody>
+                                        {renderDesktopRows()}
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </>
+
+                    )}
+
+
+                    {/* PAGINATION */}
+
+                    {!loading &&
+                        items.length > 0 && (
+
+                            <div
+                                className="
+                                    flex
+                                    flex-col
+                                    gap-3
+                                    border-t
+                                    border-[#D9DEE8]
+                                    px-4
+                                    py-3
+                                    sm:flex-row
+                                    sm:items-center
+                                    sm:justify-between
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-2
+                                        text-xs
+                                        text-slate-500
+                                    "
+                                >
+
+                                    <span>
+                                        Per halaman
+                                    </span>
+
+                                    <select
+                                        value={
+                                            perPage
+                                        }
+                                        onChange={(e) => {
+
+                                            setPerPage(
+                                                Number(
+                                                    e.target.value
+                                                )
+                                            );
+
+                                            setPage(1);
+
+                                        }}
+                                        className="
+                                            rounded-lg
+                                            border
+                                            border-slate-200
+                                            px-2
+                                            py-1
+                                        "
+                                    >
+
+                                        <option value={10}>
+                                            10
+                                        </option>
+
+                                        <option value={15}>
+                                            15
+                                        </option>
+
+                                        <option value={25}>
+                                            25
+                                        </option>
+
+                                        <option value={50}>
+                                            50
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        justify-between
+                                        gap-2
+                                        sm:justify-end
+                                    "
+                                >
+
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            page <= 1
+                                        }
+                                        onClick={() =>
+                                            goToPage(
+                                                page - 1
+                                            )
+                                        }
+                                        className="
+                                            rounded-lg
+                                            border
+                                            border-slate-200
+                                            px-3
+                                            py-1.5
+                                            text-xs
+                                            font-bold
+                                            disabled:opacity-40
+                                        "
+                                    >
+                                        Sebelumnya
+                                    </button>
+
+
+                                    <span
+                                        className="
+                                            px-2
+                                            text-xs
+                                            font-bold
+                                            text-slate-500
+                                        "
+                                    >
+                                        {pagination.current_page}
+                                        {' / '}
+                                        {pagination.last_page}
+                                    </span>
+
+
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            page >=
+                                            pagination.last_page
+                                        }
+                                        onClick={() =>
+                                            goToPage(
+                                                page + 1
+                                            )
+                                        }
+                                        className="
+                                            rounded-lg
+                                            border
+                                            border-slate-200
+                                            px-3
+                                            py-1.5
+                                            text-xs
+                                            font-bold
+                                            disabled:opacity-40
+                                        "
+                                    >
+                                        Berikutnya
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+                </div>
+
+            </div>
+
+
+            {/* =========================================================
+                MODAL WO
+            ========================================================== */}
+
+            {showWoModal && (
+
+                <div
+                    className="
+                        fixed
+                        inset-0
+                        z-[100]
+                        flex
+                        items-start
+                        justify-center
+                        bg-blue-900/50
+                        p-3
+                        pt-[calc(64px+12px)]
+                        pb-4
+                        backdrop-blur-sm
+                        sm:items-center
+                        sm:p-4
+                    "
+                >
+
+                    <div
+                        className="
+                            relative
+                            z-[101]
+                            flex
+                            max-h-[calc(100dvh-92px)]
+                            w-full
+                            flex-col
+                            overflow-hidden
+                            rounded-2xl
+                            bg-white
+                            shadow-2xl
+                            sm:max-w-2xl
+                        "
+                    >
+
+                        <div
+                            className="
+                                h-2
+                                w-full
+                                shrink-0
+                                bg-gradient-to-r
+                                from-[#243A70]
+                                via-[#4B8DF5]
+                                to-[#FF9D00]
+                            "
+                        />
+
+
+                        <div
+                            className="
+                                flex
+                                items-center
+                                justify-between
+                                border-b
+                                border-[#D9DEE8]
+                                px-5
+                                py-4
+                            "
+                        >
+
+                            <div>
+
+                                <h2
+                                    className="
+                                        text-base
+                                        font-bold
+                                        text-[#243A70]
+                                        sm:text-lg
+                                    "
+                                >
+                                    {editingWoId
+                                        ? 'Edit Work Order'
+                                        : 'Tambah Work Order'}
+                                </h2>
+
+                                <p
+                                    className="
+                                        mt-0.5
+                                        text-[11px]
+                                        text-slate-400
+                                    "
+                                >
+                                    Primary Pos 1 — Rajang
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                onClick={
+                                    closeWoModal
+                                }
+                                disabled={saving}
+                                className="
+                                    rounded-xl
+                                    p-2
+                                    text-slate-400
+                                    hover:bg-slate-100
+                                "
+                            >
+
+                                <X size={19} />
 
                             </button>
 
                         </div>
 
 
-                        {/* FORM */}
-
                         <form
                             onSubmit={
-                                handleSubmit
+                                handleWoSubmit
                             }
                             className="
-                                p-5
-                                space-y-4
+                                min-h-0
+                                flex-1
+                                overflow-y-auto
+                                px-5
+                                py-5
                             "
                         >
 
@@ -2721,257 +3228,89 @@ export default function WoManagement() {
                                 className="
                                     grid
                                     grid-cols-1
-                                    sm:grid-cols-2
                                     gap-4
+                                    sm:grid-cols-2
                                 "
                             >
 
-                                {/* NO WO */}
+                                <FormInput
+                                    label="No. WO"
+                                    name="no_wo"
+                                    value={
+                                        woForm.no_wo
+                                    }
+                                    onChange={
+                                        handleWoChange
+                                    }
+                                    required
+                                    disabled={saving}
+                                />
 
-                                <div>
 
-                                    <label
-                                        className="
-                                            block
-                                            text-xs
-                                            font-bold
-                                            text-slate-600
-                                            mb-1.5
-                                        "
-                                    >
-                                        No. WO
-                                        <span className="text-rose-500">
-                                            {' '}*
-                                        </span>
-                                    </label>
+                                <FormInput
+                                    label="Tanggal WO"
+                                    name="tanggal_wo"
+                                    type="date"
+                                    value={
+                                        woForm.tanggal_wo
+                                    }
+                                    onChange={
+                                        handleWoChange
+                                    }
+                                    disabled={saving}
+                                />
 
-                                    <input
-                                        type="text"
-                                        name="no_wo"
+
+                                <div
+                                    className="
+                                        sm:col-span-2
+                                    "
+                                >
+
+                                    <FormInput
+                                        label="Aturan"
+                                        name="aturan"
                                         value={
-                                            form.no_wo
+                                            woForm.aturan
                                         }
                                         onChange={
-                                            handleChange
-                                        }
-                                        placeholder="Contoh: EXE-30"
-                                        autoFocus
-                                        disabled={saving}
-                                        className="
-                                            w-full
-                                            px-3
-                                            py-2.5
-                                            border
-                                            border-slate-300
-                                            rounded-xl
-                                            text-sm
-                                            outline-none
-                                            focus:border-blue-500
-                                            focus:ring-2
-                                            focus:ring-blue-100
-                                            disabled:bg-slate-100
-                                        "
-                                    />
-
-                                </div>
-
-
-                                {/* TANGGAL */}
-
-                                <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-xs
-                                            font-bold
-                                            text-slate-600
-                                            mb-1.5
-                                        "
-                                    >
-                                        Tanggal WO
-                                    </label>
-
-                                    <input
-                                        type="date"
-                                        name="tanggal_wo"
-                                        value={
-                                            form.tanggal_wo
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
-                                        disabled={saving}
-                                        className="
-                                            w-full
-                                            px-3
-                                            py-2.5
-                                            border
-                                            border-slate-300
-                                            rounded-xl
-                                            text-sm
-                                            outline-none
-                                            focus:border-blue-500
-                                            focus:ring-2
-                                            focus:ring-blue-100
-                                            disabled:bg-slate-100
-                                        "
-                                    />
-
-                                </div>
-
-
-                                {/* JENIS */}
-
-                                <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-xs
-                                            font-bold
-                                            text-slate-600
-                                            mb-1.5
-                                        "
-                                    >
-                                        Jenis
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="jenis"
-                                        value={
-                                            form.jenis
-                                        }
-                                        onChange={
-                                            handleChange
+                                            handleWoChange
                                         }
                                         placeholder="Contoh: CHN"
-                                        disabled={saving}
-                                        className="
-                                            w-full
-                                            px-3
-                                            py-2.5
-                                            border
-                                            border-slate-300
-                                            rounded-xl
-                                            text-sm
-                                            outline-none
-                                            focus:border-blue-500
-                                            focus:ring-2
-                                            focus:ring-blue-100
-                                            disabled:bg-slate-100
-                                        "
+                                        required
+                                        disabled={
+                                            saving
+                                        }
                                     />
 
                                 </div>
 
 
-                                {/* S/K */}
+                                <FormInput
+                                    label="Jumlah Bal"
+                                    name="jumlah_bal"
+                                    type="number"
+                                    min="1"
+                                    value={
+                                        woForm.jumlah_bal
+                                    }
+                                    onChange={
+                                        handleWoChange
+                                    }
+                                    required
+                                    disabled={saving}
+                                />
+
 
                                 <div>
 
                                     <label
                                         className="
+                                            mb-1.5
                                             block
                                             text-xs
                                             font-bold
                                             text-slate-600
-                                            mb-1.5
-                                        "
-                                    >
-                                        S / K
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="s_k"
-                                        value={
-                                            form.s_k
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
-                                        placeholder="Contoh: 4/J1/21"
-                                        disabled={saving}
-                                        className="
-                                            w-full
-                                            px-3
-                                            py-2.5
-                                            border
-                                            border-slate-300
-                                            rounded-xl
-                                            text-sm
-                                            outline-none
-                                            focus:border-blue-500
-                                            focus:ring-2
-                                            focus:ring-blue-100
-                                            disabled:bg-slate-100
-                                        "
-                                    />
-
-                                </div>
-
-
-                                {/* JUMLAH BAL */}
-
-                                <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-xs
-                                            font-bold
-                                            text-slate-600
-                                            mb-1.5
-                                        "
-                                    >
-                                        Jumlah Bal
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        name="jumlah_bal"
-                                        value={
-                                            form.jumlah_bal
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
-                                        placeholder="Contoh: 15"
-                                        disabled={saving}
-                                        className="
-                                            w-full
-                                            px-3
-                                            py-2.5
-                                            border
-                                            border-slate-300
-                                            rounded-xl
-                                            text-sm
-                                            outline-none
-                                            focus:border-blue-500
-                                            focus:ring-2
-                                            focus:ring-blue-100
-                                            disabled:bg-slate-100
-                                        "
-                                    />
-
-                                </div>
-
-
-                                {/* STATUS */}
-
-                                <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-xs
-                                            font-bold
-                                            text-slate-600
-                                            mb-1.5
                                         "
                                     >
                                         Status
@@ -2980,26 +3319,27 @@ export default function WoManagement() {
                                     <select
                                         name="status"
                                         value={
-                                            form.status
+                                            woForm.status
                                         }
                                         onChange={
-                                            handleChange
+                                            handleWoChange
                                         }
-                                        disabled={saving}
+                                        disabled={
+                                            saving
+                                        }
                                         className="
                                             w-full
+                                            rounded-xl
+                                            border
+                                            border-slate-200
+                                            bg-white
                                             px-3
                                             py-2.5
-                                            border
-                                            border-slate-300
-                                            rounded-xl
                                             text-sm
-                                            bg-white
                                             outline-none
-                                            focus:border-blue-500
+                                            focus:border-[#4B8DF5]
                                             focus:ring-2
-                                            focus:ring-blue-100
-                                            disabled:bg-slate-100
+                                            focus:ring-[#DCE9FF]
                                         "
                                     >
 
@@ -3023,87 +3363,95 @@ export default function WoManagement() {
 
                                 </div>
 
-                            </div>
 
-
-                            {/* KETERANGAN */}
-
-                            <div>
-
-                                <label
+                                <div
                                     className="
-                                        block
-                                        text-xs
-                                        font-bold
-                                        text-slate-600
-                                        mb-1.5
+                                        sm:col-span-2
                                     "
                                 >
-                                    Keterangan
-                                </label>
 
-                                <textarea
-                                    name="keterangan"
-                                    value={
-                                        form.keterangan
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    rows={3}
-                                    placeholder="Keterangan WO..."
-                                    disabled={saving}
-                                    className="
-                                        w-full
-                                        px-3
-                                        py-2.5
-                                        border
-                                        border-slate-300
-                                        rounded-xl
-                                        text-sm
-                                        outline-none
-                                        resize-none
-                                        focus:border-blue-500
-                                        focus:ring-2
-                                        focus:ring-blue-100
-                                        disabled:bg-slate-100
-                                    "
-                                />
+                                    <label
+                                        className="
+                                            mb-1.5
+                                            block
+                                            text-xs
+                                            font-bold
+                                            text-slate-600
+                                        "
+                                    >
+                                        Keterangan
+                                    </label>
+
+                                    <textarea
+                                        name="keterangan"
+                                        value={
+                                            woForm.keterangan
+                                        }
+                                        onChange={
+                                            handleWoChange
+                                        }
+                                        rows={3}
+                                        disabled={
+                                            saving
+                                        }
+                                        className="
+                                            w-full
+                                            resize-none
+                                            rounded-xl
+                                            border
+                                            border-slate-200
+                                            bg-slate-50
+                                            px-3
+                                            py-2.5
+                                            text-sm
+                                            outline-none
+                                            focus:border-[#4B8DF5]
+                                            focus:bg-white
+                                            focus:ring-2
+                                            focus:ring-[#DCE9FF]
+                                        "
+                                        placeholder="Keterangan WO..."
+                                    />
+
+                                </div>
 
                             </div>
 
-
-                            {/* FOOTER */}
 
                             <div
                                 className="
-                                    pt-3
-                                    border-t
-                                    border-slate-200
+                                    mt-5
                                     flex
-                                    justify-end
+                                    flex-col-reverse
                                     gap-2
+                                    border-t
+                                    border-[#D9DEE8]
+                                    pt-4
+                                    sm:flex-row
+                                    sm:justify-end
                                 "
                             >
 
                                 <button
                                     type="button"
                                     onClick={
-                                        closeModal
+                                        closeWoModal
                                     }
                                     disabled={
                                         saving
                                     }
                                     className="
-                                        px-4
-                                        py-2.5
+                                        w-full
                                         rounded-xl
-                                        bg-slate-100
-                                        text-slate-700
-                                        font-bold
+                                        border
+                                        border-slate-200
+                                        px-5
+                                        py-2.5
                                         text-sm
-                                        hover:bg-slate-200
-                                        disabled:opacity-50
+                                        font-semibold
+                                        text-slate-600
+                                        hover:bg-slate-50
+                                        sm:w-auto
                                     "
                                 >
                                     Batal
@@ -3116,51 +3464,43 @@ export default function WoManagement() {
                                         saving
                                     }
                                     className="
-                                        inline-flex
+                                        flex
+                                        w-full
                                         items-center
+                                        justify-center
                                         gap-2
+                                        rounded-xl
+                                        bg-[#243A70]
                                         px-5
                                         py-2.5
-                                        rounded-xl
-                                        bg-blue-600
-                                        text-white
-                                        font-bold
                                         text-sm
-                                        shadow
-                                        hover:bg-blue-700
-                                        disabled:bg-slate-300
-                                        disabled:cursor-not-allowed
+                                        font-bold
+                                        text-white
+                                        hover:bg-[#1D315F]
+                                        disabled:opacity-50
+                                        sm:w-auto
                                     "
                                 >
 
                                     {saving ? (
 
                                         <>
-
                                             <RefreshCw
                                                 size={16}
-                                                className="
-                                                    animate-spin
-                                                "
+                                                className="animate-spin"
                                             />
 
                                             Menyimpan...
-
                                         </>
 
                                     ) : (
 
                                         <>
-
                                             <Save
                                                 size={16}
                                             />
 
-                                            {editingId
-                                                ? 'Simpan Perubahan'
-                                                : 'Simpan WO'
-                                            }
-
+                                            Simpan WO
                                         </>
 
                                     )}
@@ -3177,8 +3517,1378 @@ export default function WoManagement() {
 
             )}
 
+
+            {/* =========================================================
+                MODAL DETAIL WO
+            ========================================================== */}
+
+            {showDetailModal &&
+                selectedWo && (
+
+                    <div
+                        className="
+                            fixed
+                            inset-0
+                            z-[100]
+                            flex
+                            items-start
+                            justify-center
+                            bg-blue-900/50
+                            p-3
+                            pt-[calc(64px+12px)]
+                            pb-4
+                            backdrop-blur-sm
+                            sm:items-center
+                            sm:p-4
+                        "
+                    >
+
+                        <div
+                            className="
+                                relative
+                                z-[101]
+                                flex
+                                max-h-[calc(100dvh-92px)]
+                                w-full
+                                flex-col
+                                overflow-hidden
+                                rounded-2xl
+                                bg-white
+                                shadow-2xl
+                                sm:max-w-6xl
+                            "
+                        >
+
+                            <div
+                                className="
+                                    h-2
+                                    w-full
+                                    shrink-0
+                                    bg-gradient-to-r
+                                    from-[#243A70]
+                                    via-[#4B8DF5]
+                                    to-[#FF9D00]
+                                "
+                            />
+
+
+                            {/* HEADER */}
+
+                            <div
+                                className="
+                                    flex
+                                    shrink-0
+                                    items-center
+                                    justify-between
+                                    border-b
+                                    border-[#D9DEE8]
+                                    px-4
+                                    py-4
+                                    sm:px-5
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        min-w-0
+                                        items-center
+                                        gap-3
+                                    "
+                                >
+
+                                    <div
+                                        className="
+                                            flex
+                                            h-10
+                                            w-10
+                                            shrink-0
+                                            items-center
+                                            justify-center
+                                            rounded-xl
+                                            bg-[#EAF1FF]
+                                            text-[#243A70]
+                                        "
+                                    >
+
+                                        <ClipboardList
+                                            size={19}
+                                        />
+
+                                    </div>
+
+
+                                    <div
+                                        className="
+                                            min-w-0
+                                        "
+                                    >
+
+                                        <h2
+                                            className="
+                                                truncate
+                                                text-base
+                                                font-bold
+                                                text-[#243A70]
+                                                sm:text-lg
+                                            "
+                                        >
+                                            Detail WO — {selectedWo.no_wo}
+                                        </h2>
+
+                                        <p
+                                            className="
+                                                mt-0.5
+                                                text-[11px]
+                                                text-slate-400
+                                            "
+                                        >
+                                            Aturan: {selectedWo.aturan || '-'}
+                                            {' • '}
+                                            {selectedWo.jumlah_bal ?? 0} Bal
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        closeDetail
+                                    }
+                                    disabled={
+                                        saving
+                                    }
+                                    className="
+                                        rounded-xl
+                                        p-2
+                                        text-slate-400
+                                        hover:bg-slate-100
+                                    "
+                                >
+
+                                    <X size={19} />
+
+                                </button>
+
+                            </div>
+
+
+                            {/* DETAIL TOOLBAR */}
+
+                            <div
+                                className="
+                                    flex
+                                    shrink-0
+                                    flex-col
+                                    gap-3
+                                    border-b
+                                    border-[#D9DEE8]
+                                    bg-[#F8FAFD]
+                                    px-4
+                                    py-3
+                                    sm:flex-row
+                                    sm:items-center
+                                    sm:justify-between
+                                    sm:px-5
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        flex-wrap
+                                        gap-2
+                                    "
+                                >
+
+                                    <span
+                                        className="
+                                            flex
+                                            items-center
+                                            gap-1.5
+                                            rounded-lg
+                                            bg-white
+                                            px-3
+                                            py-1.5
+                                            text-[11px]
+                                            font-semibold
+                                            text-slate-600
+                                        "
+                                    >
+
+                                        <Package
+                                            size={13}
+                                        />
+
+                                        {details.length} Detail
+
+                                    </span>
+
+
+                                    <span
+                                        className="
+                                            flex
+                                            items-center
+                                            gap-1.5
+                                            rounded-lg
+                                            bg-[#EAF1FF]
+                                            px-3
+                                            py-1.5
+                                            text-[11px]
+                                            font-bold
+                                            text-[#243A70]
+                                        "
+                                    >
+
+                                        <Package
+                                            size={13}
+                                        />
+
+                                        {detailTotalBal} Bal
+
+                                    </span>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        openCreateDetail
+                                    }
+                                    className="
+                                        flex
+                                        w-full
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-xl
+                                        bg-[#243A70]
+                                        px-4
+                                        py-2.5
+                                        text-xs
+                                        font-bold
+                                        text-white
+                                        hover:bg-[#1D315F]
+                                        sm:w-auto
+                                    "
+                                >
+
+                                    <Plus
+                                        size={15}
+                                    />
+
+                                    Tambah Detail
+
+                                </button>
+
+                            </div>
+
+
+                            {/* DETAIL BODY */}
+
+                            <div
+                                className="
+                                    min-h-0
+                                    flex-1
+                                    overflow-y-auto
+                                    p-3
+                                    sm:p-5
+                                "
+                            >
+
+                                {loadingDetails ? (
+
+                                    <div
+                                        className="
+                                            flex
+                                            min-h-[250px]
+                                            flex-col
+                                            items-center
+                                            justify-center
+                                        "
+                                    >
+
+                                        <RefreshCw
+                                            size={28}
+                                            className="
+                                                mb-3
+                                                animate-spin
+                                                text-[#243A70]
+                                            "
+                                        />
+
+                                        <p
+                                            className="
+                                                text-sm
+                                                text-slate-500
+                                            "
+                                        >
+                                            Memuat detail WO...
+                                        </p>
+
+                                    </div>
+
+                                ) : details.length === 0 ? (
+
+                                    <div
+                                        className="
+                                            rounded-2xl
+                                            border
+                                            border-dashed
+                                            border-[#D9DEE8]
+                                            bg-[#F8FAFD]
+                                            px-5
+                                            py-14
+                                            text-center
+                                        "
+                                    >
+
+                                        <Package
+                                            size={26}
+                                            className="
+                                                mx-auto
+                                                text-slate-300
+                                            "
+                                        />
+
+                                        <h3
+                                            className="
+                                                mt-3
+                                                text-sm
+                                                font-bold
+                                                text-[#243A70]
+                                            "
+                                        >
+                                            Belum ada detail WO
+                                        </h3>
+
+                                        <p
+                                            className="
+                                                mt-1
+                                                text-xs
+                                                text-slate-400
+                                            "
+                                        >
+                                            Tambahkan detail untuk WO ini.
+                                        </p>
+
+                                    </div>
+
+                                ) : (
+
+                                    <>
+
+                                        {/* MOBILE DETAIL */}
+
+                                        <div
+                                            className="
+                                                space-y-2.5
+                                                md:hidden
+                                            "
+                                        >
+
+                                            {details.map(
+                                                (item) => (
+
+                                                    <div
+                                                        key={
+                                                            item.id
+                                                        }
+                                                        className="
+                                                            rounded-2xl
+                                                            border
+                                                            border-[#D9DEE8]
+                                                            bg-white
+                                                            p-4
+                                                            shadow-sm
+                                                        "
+                                                    >
+
+                                                        <div
+                                                            className="
+                                                                flex
+                                                                items-start
+                                                                justify-between
+                                                                gap-3
+                                                            "
+                                                        >
+
+                                                            <div>
+
+                                                                <span
+                                                                    className="
+                                                                        inline-flex
+                                                                        rounded-lg
+                                                                        bg-[#EAF1FF]
+                                                                        px-2.5
+                                                                        py-1
+                                                                        text-[10px]
+                                                                        font-bold
+                                                                        text-[#243A70]
+                                                                    "
+                                                                >
+                                                                    #{item.no_urut}
+                                                                </span>
+
+                                                                <h4
+                                                                    className="
+                                                                        mt-2
+                                                                        text-sm
+                                                                        font-bold
+                                                                        text-slate-700
+                                                                    "
+                                                                >
+                                                                    {item.gudang || '-'}
+                                                                </h4>
+
+                                                            </div>
+
+
+                                                            <div
+                                                                className="
+                                                                    text-right
+                                                                "
+                                                            >
+
+                                                                <div
+                                                                    className="
+                                                                        text-[10px]
+                                                                        text-slate-400
+                                                                    "
+                                                                >
+                                                                    Bal
+                                                                </div>
+
+                                                                <div
+                                                                    className="
+                                                                        text-lg
+                                                                        font-bold
+                                                                        text-[#243A70]
+                                                                    "
+                                                                >
+                                                                    {item.jml_bal ?? 0}
+                                                                </div>
+
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        <div
+                                                            className="
+                                                                mt-3
+                                                                grid
+                                                                grid-cols-2
+                                                                gap-2
+                                                                text-xs
+                                                            "
+                                                        >
+
+                                                            <DetailInfo
+                                                                label="Jenis TBK"
+                                                                value={
+                                                                    item.jenis_tbk
+                                                                }
+                                                            />
+
+                                                            <DetailInfo
+                                                                label="Tahun"
+                                                                value={
+                                                                    item.tahun
+                                                                }
+                                                            />
+
+                                                            <DetailInfo
+                                                                label="S/K"
+                                                                value={
+                                                                    item.s_k
+                                                                }
+                                                            />
+
+                                                            <DetailInfo
+                                                                label="Grade"
+                                                                value={
+                                                                    item.grade
+                                                                }
+                                                            />
+
+                                                            <DetailInfo
+                                                                label="Tara"
+                                                                value={
+                                                                    item.tara
+                                                                }
+                                                            />
+
+                                                            <DetailInfo
+                                                                label="Bruto"
+                                                                value={
+                                                                    item.bruto
+                                                                }
+                                                            />
+
+                                                            <DetailInfo
+                                                                label="Netto"
+                                                                value={
+                                                                    item.netto
+                                                                }
+                                                            />
+
+                                                        </div>
+
+
+                                                        <div
+                                                            className="
+                                                                mt-3
+                                                                flex
+                                                                justify-end
+                                                                gap-2
+                                                                border-t
+                                                                border-slate-100
+                                                                pt-3
+                                                            "
+                                                        >
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    openEditDetail(
+                                                                        item
+                                                                    )
+                                                                }
+                                                                className="
+                                                                    flex
+                                                                    items-center
+                                                                    gap-1.5
+                                                                    rounded-xl
+                                                                    bg-[#EAF1FF]
+                                                                    px-3
+                                                                    py-2
+                                                                    text-xs
+                                                                    font-bold
+                                                                    text-[#243A70]
+                                                                "
+                                                            >
+
+                                                                <Edit
+                                                                    size={13}
+                                                                />
+
+                                                                Edit
+
+                                                            </button>
+
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleDeleteDetail(
+                                                                        item
+                                                                    )
+                                                                }
+                                                                className="
+                                                                    flex
+                                                                    items-center
+                                                                    gap-1.5
+                                                                    rounded-xl
+                                                                    bg-rose-50
+                                                                    px-3
+                                                                    py-2
+                                                                    text-xs
+                                                                    font-bold
+                                                                    text-rose-600
+                                                                "
+                                                            >
+
+                                                                <Trash2
+                                                                    size={13}
+                                                                />
+
+                                                                Hapus
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                )
+                                            )}
+
+                                        </div>
+
+
+                                        {/* DESKTOP DETAIL */}
+
+                                        <div
+                                            className="
+                                                hidden
+                                                overflow-x-auto
+                                                rounded-2xl
+                                                border
+                                                border-[#D9DEE8]
+                                                md:block
+                                            "
+                                        >
+
+                                            <table
+                                                className="
+                                                    min-w-full
+                                                    text-xs
+                                                "
+                                            >
+
+                                                <thead>
+
+                                                    <tr
+                                                        className="
+                                                            border-b
+                                                            border-[#D9DEE8]
+                                                            bg-[#F8FAFD]
+                                                        "
+                                                    >
+
+                                                        <th className="px-4 py-3 text-left font-bold text-[#243A70]">
+                                                            No
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-left font-bold text-[#243A70]">
+                                                            Gudang
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-left font-bold text-[#243A70]">
+                                                            Jenis TBK
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-center font-bold text-[#243A70]">
+                                                            Tahun
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-left font-bold text-[#243A70]">
+                                                            S/K
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-left font-bold text-[#243A70]">
+                                                            Grade
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-center font-bold text-[#243A70]">
+                                                            Bal
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-right font-bold text-[#243A70]">
+                                                            Tara
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-right font-bold text-[#243A70]">
+                                                            Bruto
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-right font-bold text-[#243A70]">
+                                                            Netto
+                                                        </th>
+
+                                                        <th className="px-4 py-3 text-right font-bold text-[#243A70]">
+                                                            Aksi
+                                                        </th>
+
+                                                    </tr>
+
+                                                </thead>
+
+
+                                                <tbody>
+
+                                                    {details.map(
+                                                        (item) => (
+
+                                                            <tr
+                                                                key={
+                                                                    item.id
+                                                                }
+                                                                className="
+                                                                    border-b
+                                                                    border-slate-100
+                                                                    hover:bg-[#F8FAFD]
+                                                                "
+                                                            >
+
+                                                                <td
+                                                                    className="
+                                                                        px-4
+                                                                        py-3
+                                                                        font-bold
+                                                                        text-[#243A70]
+                                                                    "
+                                                                >
+                                                                    {item.no_urut}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 font-medium text-slate-700">
+                                                                    {item.gudang || '-'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-slate-600">
+                                                                    {item.jenis_tbk || '-'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-center text-slate-600">
+                                                                    {item.tahun || '-'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-slate-600">
+                                                                    {item.s_k || '-'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-slate-600">
+                                                                    {item.grade || '-'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-center font-bold text-[#243A70]">
+                                                                    {item.jml_bal ?? 0}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-right text-slate-600">
+                                                                    {item.tara ?? '0.00'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-right text-slate-600">
+                                                                    {item.bruto ?? '0.00'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3 text-right font-bold text-[#009B6A]">
+                                                                    {item.netto ?? '0.00'}
+                                                                </td>
+
+                                                                <td className="px-4 py-3">
+
+                                                                    <div
+                                                                        className="
+                                                                            flex
+                                                                            justify-end
+                                                                            gap-1
+                                                                        "
+                                                                    >
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                openEditDetail(
+                                                                                    item
+                                                                                )
+                                                                            }
+                                                                            className="
+                                                                                rounded-lg
+                                                                                p-2
+                                                                                text-[#243A70]
+                                                                                hover:bg-[#EAF1FF]
+                                                                            "
+                                                                        >
+
+                                                                            <Edit
+                                                                                size={14}
+                                                                            />
+
+                                                                        </button>
+
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                handleDeleteDetail(
+                                                                                    item
+                                                                                )
+                                                                            }
+                                                                            className="
+                                                                                rounded-lg
+                                                                                p-2
+                                                                                text-rose-500
+                                                                                hover:bg-rose-50
+                                                                            "
+                                                                        >
+
+                                                                            <Trash2
+                                                                                size={14}
+                                                                            />
+
+                                                                        </button>
+
+                                                                    </div>
+
+                                                                </td>
+
+                                                            </tr>
+
+                                                        )
+                                                    )}
+
+                                                </tbody>
+
+                                            </table>
+
+                                        </div>
+
+                                    </>
+
+                                )}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+
+            {/* =========================================================
+                MODAL DETAIL FORM
+            ========================================================== */}
+
+            {showDetailForm &&
+                selectedWo && (
+
+                    <div
+                        className="
+                            fixed
+                            inset-0
+                            z-[150]
+                            flex
+                            items-start
+                            justify-center
+                            bg-blue-950/60
+                            p-3
+                            pt-[calc(64px+12px)]
+                            pb-4
+                            backdrop-blur-sm
+                            sm:items-center
+                            sm:p-4
+                        "
+                    >
+
+                        <div
+                            className="
+                                flex
+                                max-h-[calc(100dvh-92px)]
+                                w-full
+                                flex-col
+                                overflow-hidden
+                                rounded-2xl
+                                bg-white
+                                shadow-2xl
+                                sm:max-w-3xl
+                            "
+                        >
+
+                            <div
+                                className="
+                                    h-2
+                                    shrink-0
+                                    bg-gradient-to-r
+                                    from-[#243A70]
+                                    via-[#4B8DF5]
+                                    to-[#FF9D00]
+                                "
+                            />
+
+
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    justify-between
+                                    border-b
+                                    border-[#D9DEE8]
+                                    px-5
+                                    py-4
+                                "
+                            >
+
+                                <div>
+
+                                    <h2
+                                        className="
+                                            text-base
+                                            font-bold
+                                            text-[#243A70]
+                                        "
+                                    >
+                                        {editingDetailId
+                                            ? 'Edit Detail WO'
+                                            : 'Tambah Detail WO'}
+                                    </h2>
+
+                                    <p
+                                        className="
+                                            mt-0.5
+                                            text-[11px]
+                                            text-slate-400
+                                        "
+                                    >
+                                        WO: {selectedWo.no_wo}
+                                    </p>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        closeDetailForm
+                                    }
+                                    disabled={
+                                        saving
+                                    }
+                                    className="
+                                        rounded-xl
+                                        p-2
+                                        text-slate-400
+                                        hover:bg-slate-100
+                                    "
+                                >
+
+                                    <X size={19} />
+
+                                </button>
+
+                            </div>
+
+
+                            <form
+                                onSubmit={
+                                    handleDetailSubmit
+                                }
+                                className="
+                                    min-h-0
+                                    flex-1
+                                    overflow-y-auto
+                                    px-5
+                                    py-5
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        grid
+                                        grid-cols-1
+                                        gap-4
+                                        sm:grid-cols-2
+                                    "
+                                >
+
+                                    <FormInput
+                                        label="No. Urut"
+                                        name="no_urut"
+                                        type="number"
+                                        min="1"
+                                        value={
+                                            detailForm.no_urut
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Gudang"
+                                        name="gudang"
+                                        value={
+                                            detailForm.gudang
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Jenis TBK"
+                                        name="jenis_tbk"
+                                        value={
+                                            detailForm.jenis_tbk
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Tahun"
+                                        name="tahun"
+                                        type="number"
+                                        value={
+                                            detailForm.tahun
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="S/K"
+                                        name="s_k"
+                                        value={
+                                            detailForm.s_k
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Grade"
+                                        name="grade"
+                                        value={
+                                            detailForm.grade
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Jumlah Bal"
+                                        name="jml_bal"
+                                        type="number"
+                                        min="1"
+                                        value={
+                                            detailForm.jml_bal
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        required
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Tara"
+                                        name="tara"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            detailForm.tara
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Bruto"
+                                        name="bruto"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            detailForm.bruto
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+
+                                    <FormInput
+                                        label="Netto"
+                                        name="netto"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            detailForm.netto
+                                        }
+                                        onChange={
+                                            handleDetailChange
+                                        }
+                                        disabled={
+                                            saving
+                                        }
+                                    />
+
+                                </div>
+
+
+                                <div
+                                    className="
+                                        mt-5
+                                        flex
+                                        flex-col-reverse
+                                        gap-2
+                                        border-t
+                                        border-[#D9DEE8]
+                                        pt-4
+                                        sm:flex-row
+                                        sm:justify-end
+                                    "
+                                >
+
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            closeDetailForm
+                                        }
+                                        disabled={
+                                            saving
+                                        }
+                                        className="
+                                            w-full
+                                            rounded-xl
+                                            border
+                                            border-slate-200
+                                            px-5
+                                            py-2.5
+                                            text-sm
+                                            font-semibold
+                                            text-slate-600
+                                            hover:bg-slate-50
+                                            sm:w-auto
+                                        "
+                                    >
+                                        Batal
+                                    </button>
+
+
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            saving
+                                        }
+                                        className="
+                                            flex
+                                            w-full
+                                            items-center
+                                            justify-center
+                                            gap-2
+                                            rounded-xl
+                                            bg-[#243A70]
+                                            px-5
+                                            py-2.5
+                                            text-sm
+                                            font-bold
+                                            text-white
+                                            hover:bg-[#1D315F]
+                                            disabled:opacity-50
+                                            sm:w-auto
+                                        "
+                                    >
+
+                                        {saving ? (
+
+                                            <>
+                                                <RefreshCw
+                                                    size={16}
+                                                    className="animate-spin"
+                                                />
+
+                                                Menyimpan...
+                                            </>
+
+                                        ) : (
+
+                                            <>
+                                                <Save
+                                                    size={16}
+                                                />
+
+                                                Simpan Detail
+                                            </>
+
+                                        )}
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                )}
+
         </div>
 
     );
+}
 
+
+/*
+|--------------------------------------------------------------------------
+| FORM INPUT
+|--------------------------------------------------------------------------
+*/
+
+function FormInput({
+    label,
+    name,
+    type = 'text',
+    value,
+    onChange,
+    required = false,
+    disabled = false,
+    placeholder = '',
+    min,
+    step,
+}) {
+
+    return (
+
+        <div>
+
+            <label
+                className="
+                    mb-1.5
+                    block
+                    text-xs
+                    font-bold
+                    text-slate-600
+                "
+            >
+
+                {label}
+
+                {required && (
+
+                    <span
+                        className="
+                            text-rose-500
+                        "
+                    >
+                        {' '}*
+                    </span>
+
+                )}
+
+            </label>
+
+
+            <input
+                type={type}
+                name={name}
+                value={value ?? ''}
+                onChange={onChange}
+                required={required}
+                disabled={disabled}
+                min={min}
+                step={step}
+                placeholder={
+                    placeholder
+                }
+                className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-slate-200
+                    bg-slate-50
+                    px-3
+                    py-2.5
+                    text-sm
+                    text-slate-700
+                    outline-none
+                    transition
+                    placeholder:text-slate-400
+                    focus:border-[#4B8DF5]
+                    focus:bg-white
+                    focus:ring-2
+                    focus:ring-[#DCE9FF]
+                    disabled:cursor-not-allowed
+                    disabled:bg-slate-100
+                "
+            />
+
+        </div>
+
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| DETAIL INFO
+|--------------------------------------------------------------------------
+*/
+
+function DetailInfo({
+    label,
+    value,
+}) {
+
+    return (
+
+        <div
+            className="
+                rounded-xl
+                bg-slate-50
+                p-2.5
+            "
+        >
+
+            <div
+                className="
+                    text-[10px]
+                    text-slate-400
+                "
+            >
+                {label}
+            </div>
+
+            <div
+                className="
+                    mt-1
+                    truncate
+                    font-semibold
+                    text-slate-700
+                "
+            >
+                {value ?? '-'}
+            </div>
+
+        </div>
+
+    );
 }

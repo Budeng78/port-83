@@ -1,32 +1,48 @@
 import axios from "axios";
 
-// 1. Definisikan URL berdasarkan Hostname
-const baseURL =
-  window.location.hostname === "192.168.1.102"
-    ? "http://192.168.1.102:8000/api"
-    : "https://tes.tpabintangkecil.sch.id/api";
+/**
+ * Gunakan host yang sedang digunakan browser.
+ *
+ * Support:
+ *
+ * LAN:
+ *   http://192.168.4.222:83
+ *   http://192.168.10.51:83
+ *
+ * DOMAIN:
+ *   https://tpa.bintangkecil.sch.id
+ *   https://tes.tpabintangkecil.sch.id
+ */
 
-// 2. Buat Instance Axios
+const rootURL = window.location.origin;
+
 const api = axios.create({
-  baseURL,
+  baseURL: `${rootURL}/api`,
   withCredentials: true,
   timeout: 10000,
   headers: {
-    'X-Requested-With': 'XMLHttpRequest',
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  }
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+  },
 });
 
+
 /**
- * REQUEST INTERCEPTOR: Wajib ada agar token terkirim otomatis di header
+ * REQUEST INTERCEPTOR
  */
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token && token !== 'undefined' && token !== 'null') {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    const token = localStorage.getItem("access_token");
+
+    if (
+      token &&
+      token !== "undefined" &&
+      token !== "null"
+    ) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => {
@@ -34,38 +50,62 @@ api.interceptors.request.use(
   }
 );
 
-/**
- * CSRF Cookie - Penting untuk Sanctum
- */
-export const csrf = async () => {
-  const rootURL = window.location.hostname === "192.168.1.102"
-    ? "http://192.168.1.102:8000"
-    : "https://tes.tpabintangkecil.sch.id";
-    
-  return await axios.get(`${rootURL}/sanctum/csrf-cookie`, { withCredentials: true });
-};
 
 /**
- * Response Interceptor: Validasi (422) & Auto-Logout (401/419)
+ * SANCTUM CSRF COOKIE
+ *
+ * Otomatis menggunakan host yang sedang dibuka.
+ */
+export const csrf = async () => {
+  return axios.get(
+    `${rootURL}/sanctum/csrf-cookie`,
+    {
+      withCredentials: true,
+    }
+  );
+};
+
+
+/**
+ * RESPONSE INTERCEPTOR
  */
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     const { response: res } = error;
 
-    if (res && res.status === 422) {
-      const validationErrors = res.data.errors;
-      const errorMessages = Object.values(validationErrors).flat().join("\n");
-      alert("Input Tidak Valid:\n" + errorMessages);
+    /**
+     * Validation Error
+     */
+    if (res?.status === 422) {
+      const validationErrors = res.data?.errors;
+
+      if (validationErrors) {
+        const errorMessages = Object.values(validationErrors)
+          .flat()
+          .join("\n");
+
+        alert(`Input Tidak Valid:\n${errorMessages}`);
+      }
+
       return Promise.reject(error);
     }
 
+    /**
+     * Session expired / unauthorized
+     */
     if (res && (res.status === 401 || res.status === 419)) {
-      const currentPath = window.location.pathname.toLowerCase();
-      if (!currentPath.includes('/login')) {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("user_data");
-          window.location.replace("/app/login?reason=session_expired");
+      const currentPath =
+        window.location.pathname.toLowerCase();
+
+      if (!currentPath.includes("/login")) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user_data");
+
+        window.location.replace(
+          "/app/login?reason=session_expired"
+        );
       }
     }
 
