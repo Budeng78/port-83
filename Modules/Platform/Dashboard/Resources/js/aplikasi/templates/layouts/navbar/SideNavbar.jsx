@@ -455,6 +455,60 @@ export default function SideNavbar({
 
     /*
     |--------------------------------------------------------------------------
+    | GROUP MENU BERDASARKAN ORGANIZATION UNIT
+    |--------------------------------------------------------------------------
+    |
+    | Hanya menu ROOT yang dijadikan pembatas/group.
+    |
+    | Children tetap berada di dalam parent masing-masing.
+    |
+    | Contoh:
+    |
+    | === PRODUKSI ===
+    |     Penerimaan
+    |     Pengolahan
+    |
+    */
+
+    const groupedMenus =
+        menus.reduce(
+            (
+                groups,
+                item
+            ) => {
+
+                const organizationUnitName =
+                    item?.organization_unit_name
+                        ?.trim();
+
+                const groupName =
+                    organizationUnitName ||
+                    'MENU UTAMA';
+
+
+                if (
+                    !groups[groupName]
+                ) {
+
+                    groups[groupName] = [];
+
+                }
+
+
+                groups[groupName].push(
+                    item
+                );
+
+
+                return groups;
+
+            },
+            {}
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
     | AUTO OPEN ACTIVE PARENT
     |--------------------------------------------------------------------------
     */
@@ -664,65 +718,108 @@ export default function SideNavbar({
                 "
             >
 
-                {!isCollapsed && (
-
-                    <div
-                        className="
-                            px-3
-                            mb-3
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            tracking-[0.16em]
-                            text-slate-400
-                        "
-                    >
-                        Menu Utama
-                    </div>
-
-                )}
-
-
                 {menus.length > 0 ? (
 
                     <nav
-                        className="space-y-1"
+                        className="
+                            space-y-5
+                        "
                     >
 
-                        {menus.map(
+                        {Object.entries(
+                            groupedMenus
+                        ).map(
                             (
-                                item,
-                                index
+                                [
+                                    organizationUnitName,
+                                    groupMenus
+                                ],
+                                groupIndex
                             ) => (
 
-                                <SidebarItem
-
+                                <div
                                     key={
-                                        item.id ||
-                                        index
+                                        organizationUnitName ||
+                                        groupIndex
                                     }
+                                >
 
-                                    item={
-                                        item
-                                    }
+                                    {/* ==================================================
+                                        ORGANIZATION UNIT HEADER
+                                    ================================================== */}
 
-                                    pathname={
-                                        pathname
-                                    }
+                                    {!isCollapsed && (
 
-                                    toggleSubMenu={
-                                        toggleSubMenu
-                                    }
+                                        <div
+                                            className="
+                                                px-3
+                                                mb-2
+                                                text-[10px]
+                                                font-bold
+                                                uppercase
+                                                tracking-[0.16em]
+                                                text-slate-400
+                                            "
+                                        >
+                                            === {
+                                                organizationUnitName
+                                            } ===
+                                        </div>
 
-                                    openMenus={
-                                        openMenus
-                                    }
+                                    )}
 
-                                    isCollapsed={
-                                        isCollapsed
-                                    }
 
-                                />
+                                    {/* ==================================================
+                                        MENU DALAM GROUP
+                                    ================================================== */}
+
+                                    <div
+                                        className="
+                                            space-y-1
+                                        "
+                                    >
+
+                                        {groupMenus.map(
+                                            (
+                                                item,
+                                                index
+                                            ) => (
+
+                                                <SidebarItem
+
+                                                    key={
+                                                        item.id ||
+                                                        `${organizationUnitName}-${index}`
+                                                    }
+
+                                                    item={
+                                                        item
+                                                    }
+
+                                                    pathname={
+                                                        pathname
+                                                    }
+
+                                                    toggleSubMenu={
+                                                        toggleSubMenu
+                                                    }
+
+                                                    openMenus={
+                                                        openMenus
+                                                    }
+
+                                                    isCollapsed={
+                                                        isCollapsed
+                                                    }
+
+                                                />
+
+                                            )
+                                        )}
+
+                                    </div>
+
+                                </div>
 
                             )
                         )}
@@ -749,7 +846,9 @@ export default function SideNavbar({
             </div>
 
 
-            {/* FOOTER */}
+            {/* ==============================================================
+                FOOTER
+            ============================================================== */}
 
             {!isCollapsed && (
 

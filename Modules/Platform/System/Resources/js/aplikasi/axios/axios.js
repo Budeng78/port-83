@@ -6,8 +6,8 @@ import axios from "axios";
  * Support:
  *
  * LAN:
- *   http://192.168.4.222:83
- *   http://192.168.10.51:83
+ *   http://192.168.3.253:83
+ *   http://192.168.3.253:83
  *
  * DOMAIN:
  *   https://tpa.bintangkecil.sch.id

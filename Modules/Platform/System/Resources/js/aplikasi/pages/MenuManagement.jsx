@@ -2184,7 +2184,7 @@ export default function MenuManagement() {
 
                                                     <option value="">
 
-                                                        Menu Utama
+                                                        --- Menu Utama ---
 
                                                     </option>
 
