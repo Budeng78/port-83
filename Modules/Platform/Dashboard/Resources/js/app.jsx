@@ -7,6 +7,9 @@ import { AuthProvider } from '@Modules/Platform/Auth/Resources/js/aplikasi/conte
 import { PosRajang } from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/Routes.jsx';
 import { rnd } from '@Modules/Business/Rnd/Resources/js/aplikasi/Routes.jsx';
 
+import { Timbangan } from '@Modules/Application/Timbangan/Resources/js/aplikasi/Routes.jsx';
+
+
 
 // Import komponen menggunakan Lazy Loading untuk memecah chunk size
 const Login = lazy(() => import('@Modules/Platform/Auth/Resources/js/aplikasi/pages/Login'));
@@ -62,32 +65,11 @@ const router = createBrowserRouter([
             
         ],
     },
-        {
-        path: '/app/produksi/primary',
-        element: (
-            <ProtectedRoute>
-                <Suspense fallback={<Loading />}>
-                    <DefaultLayout />
-                </Suspense>
-            </ProtectedRoute>
-        ),
-        children: [
-            ...PosRajang,
-        ],
-    },
-    {
-        path: '/app/rnd',
-        element: (
-            <ProtectedRoute>
-                <Suspense fallback={<Loading />}>
-                    <DefaultLayout />
-                </Suspense>
-            </ProtectedRoute>
-        ),
-        children: [
-            ...rnd,
-        ],
-    },
+
+    { path: '/app/produksi/primary', element: ( <ProtectedRoute> <Suspense fallback={<Loading />}> <DefaultLayout /> </Suspense> </ProtectedRoute> ), children: [ ...PosRajang, ], },
+    { path: '/app/rnd', element: ( <ProtectedRoute> <Suspense fallback={<Loading />}> <DefaultLayout /> </Suspense> </ProtectedRoute> ), children: [ ...rnd, ], },
+    { path: '/app/timbangan', element: ( <ProtectedRoute> <Suspense fallback={<Loading />}> <DefaultLayout /> </Suspense> </ProtectedRoute> ), children: [ ...Timbangan, ], },
+    
 
 
 

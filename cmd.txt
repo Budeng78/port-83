@@ -1,0 +1,12 @@
+git add .
+git commit -m "Initial upload Laravel project"
+git branch -M main
+git push -u origin main
+
+
+git clone https://github.com/Budeng78/port-83.git
+cd port-83
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
