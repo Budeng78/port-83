@@ -63,4 +63,3 @@ class Pos1TargetController extends Controller
         ]);
     }
 }
-

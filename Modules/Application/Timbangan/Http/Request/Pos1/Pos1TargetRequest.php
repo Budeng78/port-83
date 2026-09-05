@@ -17,8 +17,13 @@ class Pos1TargetRequest extends FormRequest
             'tanggal'      => ['required', 'date'],
             'nomor_aturan' => ['required', 'string', 'max:100'],
             'jenis_tbk'    => ['required', 'string', 'max:100'],
+            'tahun'        => ['required', 'string', 'max:20'],
+            'grade'        => ['required', 'string', 'max:100'],
             's_k'          => ['required', 'string', 'max:10'],
+            'type'         => ['required', 'in:krosok,precut'],
             'jumlah_bal'   => ['required', 'integer', 'min:1'],
+            'tara'         => ['required', 'numeric', 'min:0'],
+            'status'       => ['sometimes', 'in:pending,active,finish'],
         ];
     }
 }

@@ -1,11 +1,16 @@
 <?php
 
 namespace Modules\Application\Timbangan\Models;
-use App\Models\BaseModel;
 
-class Pos1Timbang1Cache extends BaseModel
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+
+class Pos1Timbang1Cache extends Model
 {
     protected $table = 'timbangan_pos1_timbang1_cache';
+
+    protected $keyType = 'string';
+    public $incrementing = false;
 
     protected $fillable = [
         'target_id',
@@ -17,6 +22,17 @@ class Pos1Timbang1Cache extends BaseModel
         'nomor_bal'   => 'integer',
         'berat_kotor' => 'decimal:3',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
 
     public function target()
     {

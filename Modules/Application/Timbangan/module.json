@@ -1,6 +1,6 @@
 {
-    "name": "Aplikasi Timbangan",
-    "alias": "Apptimbangan",
+    "name": "Application",
+    "alias": "application",
     "description": "Modul operasional pos rajang",
     "version": "1.0.0",
     "is_active": true

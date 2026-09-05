@@ -3,15 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@Modules/Platform/Auth/Resources/js/aplikasi/context/AuthContext';
 
-// import router modules
+// Import router modules (Seluruhnya harus mengekspor Array Objek)
 import { PosRajang } from '@Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/Routes.jsx';
 import { rnd } from '@Modules/Business/Rnd/Resources/js/aplikasi/Routes.jsx';
-
 import { Timbangan } from '@Modules/Application/Timbangan/Resources/js/aplikasi/Routes.jsx';
 
-
-
-// Import komponen menggunakan Lazy Loading untuk memecah chunk size
+// Import komponen menggunakan Lazy Loading
 const Login = lazy(() => import('@Modules/Platform/Auth/Resources/js/aplikasi/pages/Login'));
 const Dashboard = lazy(() => import('@Modules/Platform/Dashboard/Resources/js/aplikasi/pages/Dashboard'));
 const DefaultLayout = lazy(() => import('@Modules/Platform/Dashboard/Resources/js/aplikasi/templates/layouts/DefaultLayout'));
@@ -28,13 +25,11 @@ const MenuManagement = lazy(() => import('@Modules/Platform/System/Resources/js/
 const ModuleManage = lazy(() => import('@Modules/Platform/System/Resources/js/aplikasi/pages/ModuleManager'));
 const TrashManagement = lazy(() => import('@Modules/Platform/System/Resources/js/aplikasi/pages/TrashManagement'));
 
-
 const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('access_token');
     return token ? children : <Navigate to="/app/platform/auth/login" replace />;
 };
 
-// Bungkus dengan Suspense agar tidak error saat loading chunk
 const Loading = () => <div className="p-4">Loading...</div>;
 
 const router = createBrowserRouter([
@@ -48,32 +43,56 @@ const router = createBrowserRouter([
             </ProtectedRoute>
         ),
         children: [
-            { index: true, element: <Navigate to="dashboard" replace /> }, //
-            { path: 'dashboard', element: <Dashboard /> }, // dasboard 
-            { path: 'modules', element: <ModuleManage /> }, // bisnis
+            { index: true, element: <Navigate to="dashboard" replace /> },
+            { path: 'dashboard', element: <Dashboard /> },
+            { path: 'modules', element: <ModuleManage /> },
             { path: 'menus', element: <MenuManagement /> },
-            { path: 'users', element: <UserManage /> }, // bisnis
-            { path: 'usermenu', element: <UserMenu /> }, // bisnis
-            { path: 'roles', element: <RoleManage /> }, // bisnis RolePermissionManage            
+            { path: 'users', element: <UserManage /> },
+            { path: 'usermenu', element: <UserMenu /> },
+            { path: 'roles', element: <RoleManage /> },
             { path: 'permissions', element: <PermissionManage /> },
             { path: 'RolePermission', element: <RolePermissionManage /> },
-            { path: 'usermatrix', element: <UserMatrix />}, // bisnis
-            { path: 'assignments', element: <Assignment />}, // bisnis
-            { path: 'organization-levels', element: <OrganizationLevelManage />,}, // bisnis
-            { path: 'organization-unit', element: <OrganizationUnitManage />,}, // bisnis// bisnis
-            { path: 'trashmanagement', element: <TrashManagement />,},
-            
+            { path: 'usermatrix', element: <UserMatrix /> },
+            { path: 'assignments', element: <Assignment /> },
+            { path: 'organization-levels', element: <OrganizationLevelManage /> },
+            { path: 'organization-unit', element: <OrganizationUnitManage /> },
+            { path: 'trashmanagement', element: <TrashManagement /> },
         ],
     },
 
-    { path: '/app/produksi/primary', element: ( <ProtectedRoute> <Suspense fallback={<Loading />}> <DefaultLayout /> </Suspense> </ProtectedRoute> ), children: [ ...PosRajang, ], },
-    { path: '/app/rnd', element: ( <ProtectedRoute> <Suspense fallback={<Loading />}> <DefaultLayout /> </Suspense> </ProtectedRoute> ), children: [ ...rnd, ], },
-    { path: '/app/timbangan', element: ( <ProtectedRoute> <Suspense fallback={<Loading />}> <DefaultLayout /> </Suspense> </ProtectedRoute> ), children: [ ...Timbangan, ], },
-    
+    {
+        path: '/app/produksi/primary',
+        element: (
+            <ProtectedRoute>
+                <Suspense fallback={<Loading />}><DefaultLayout /></Suspense>
+            </ProtectedRoute>
+        ),
+        children: PosRajang,
+    },
+    {
+        path: '/app/rnd',
+        element: (
+            <ProtectedRoute>
+                <Suspense fallback={<Loading />}><DefaultLayout /></Suspense>
+            </ProtectedRoute>
+        ),
+        children: rnd,
+    },
+    {
+        path: '/app/timbangan',
+        element: (
+            <ProtectedRoute>
+                <Suspense fallback={<Loading />}><DefaultLayout /></Suspense>
+            </ProtectedRoute>
+        ),
+        children: Timbangan,
+    },
 
-
-
-
+    // Catch-All Route (Fallback jika rute tidak terdaftar)
+    {
+        path: '*',
+        element: <Navigate to="/app/platform/dashboard" replace />,
+    },
 ]);
 
 function App() {

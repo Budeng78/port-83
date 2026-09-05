@@ -8,28 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('rnd_aturan_tbk_kiriman_detail', function (Blueprint $table) {
+        Schema::create('rnd_aturan_tbk_kiriman', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->foreignUuid('kiriman_id')
-                ->constrained('rnd_aturan_tbk_kiriman')
-                ->cascadeOnDelete();
+            // Kolom FK
+            $table->uuid('aturan_id');
 
-            $table->foreignUuid('aturan_detail_id')
-                ->constrained('primary_rnd_aturan_tbk_detail')
-                ->cascadeOnDelete();
-
-            $table->string('type', 20);
-            $table->unsignedInteger('jumlah_pack');
-            $table->decimal('tara', 10, 3);
+            $table->string('no_surat_kiriman', 100);
+            $table->string('nomor_kendaraan', 50);
+            $table->string('nama_sopir', 100);
+            $table->string('dari', 100);
 
             $table->timestamps();
             $table->softDeletes();
+
+            // Foreign Key (disamakan dengan style tabel terdahulu)
+            $table->foreign('aturan_id')
+                ->references('id')
+                ->on('rnd_tobacco_aturan')
+                ->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('rnd_aturan_tbk_kiriman_detail');
+        Schema::dropIfExists('rnd_aturan_tbk_kiriman');
     }
 };

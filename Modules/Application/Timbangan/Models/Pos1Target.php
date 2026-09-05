@@ -12,8 +12,12 @@ class Pos1Target extends BaseModel
         'tanggal',
         'nomor_aturan',
         'jenis_tbk',
+        'tahun',
+        'grade',
         's_k',
         'jumlah_bal',
+        'tara',
+        'status',
     ];
 
     protected $casts = [

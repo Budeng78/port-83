@@ -1,6 +1,6 @@
 import axios from '@Modules/Platform/System/Resources/js/aplikasi/axios/axios';
 
-const BASE_URL = '/timbangan/Pos1/target';
+const BASE_URL = '/timbangan/pos1/target';
 
 const pos1TargetService = {
     getAll: async (params = {}) => {
