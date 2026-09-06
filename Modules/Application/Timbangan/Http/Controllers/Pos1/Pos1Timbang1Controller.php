@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Application\Timbangan\Models\Pos1Target;
 use Modules\Application\Timbangan\Models\Pos1Timbang1;
 use Modules\Application\Timbangan\Models\Pos1Timbang1Cache;
+use Illuminate\Support\Str;
 
 class Pos1Timbang1Controller extends Controller
 {
@@ -25,6 +26,7 @@ class Pos1Timbang1Controller extends Controller
                 's_k',
                 'jumlah_bal'
             ])
+            ->where('status', '!=', 'finish')
             ->orderBy('tanggal', 'asc') // FIFO: Urutkan dari tanggal terlama ke terbaru
             ->orderBy('created_at', 'asc') // Urutan sekunder jika tanggalnya sama
             ->get()
@@ -64,6 +66,7 @@ class Pos1Timbang1Controller extends Controller
                 'nomor_bal' => $validated['nomor_bal'],
             ],
             [
+                'id'          => (string) Str::uuid7(), // Sedia UUID v7 jika aksi berupa INSERT
                 'berat_kotor' => $validated['berat_kotor'],
             ]
         );
@@ -150,6 +153,7 @@ class Pos1Timbang1Controller extends Controller
                         'nomor_bal' => $item->nomor_bal,
                     ],
                     [
+                        'id'          => (string) Str::uuid7(),
                         'berat_kotor' => $item->berat_kotor,
                     ]
                 );
@@ -157,10 +161,73 @@ class Pos1Timbang1Controller extends Controller
 
             Pos1Timbang1Cache::where('target_id', $targetId)->delete();
 
+            // TAMBAHAN: tandai target sebagai selesai
+            Pos1Target::where('id', $targetId)->update(['status' => 'finish']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Seluruh data penimbangan berhasil disimpan permanen!'
             ]);
         });
     }
+
+    public function clearCacheByTarget($targetId)
+    {
+        try {
+            // Validasi format UUID target_id agar tidak invalid query
+            if (!Str::isUuid($targetId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format Target ID tidak valid.'
+                ], 400);
+            }
+
+            // Hapus menggunakan Eloquent Model langsung
+            $deletedCount = Pos1Timbang1Cache::where('target_id', $targetId)->delete();
+
+            return response()->json([
+                'success'       => true,
+                'message'       => "Seluruh cache staging ({$deletedCount} bal) berhasil dibersihkan.",
+                'deleted_count' => $deletedCount
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus cache: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateStatus(Request $request, $targetId)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,active,finish',
+        ]);
+
+        if (!Str::isUuid($targetId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Format Target ID tidak valid.'
+            ], 400);
+        }
+
+        $target = Pos1Target::find($targetId);
+
+        if (!$target) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Target tidak ditemukan.'
+            ], 404);
+        }
+
+        $target->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Status target berhasil diubah menjadi '{$validated['status']}'.",
+            'data'    => $target
+        ]);
+    }
+
 }

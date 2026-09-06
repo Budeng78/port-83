@@ -2,17 +2,21 @@
 
 namespace Modules\Application\Timbangan\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Pos1Timbang1Cache extends Model
 {
+    use HasUuids;
+
     protected $table = 'timbangan_pos1_timbang1_cache';
 
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
+        'id', // Wajib ada agar Mass Assignment tidak memblokir id
         'target_id',
         'nomor_bal',
         'berat_kotor',
@@ -23,15 +27,12 @@ class Pos1Timbang1Cache extends Model
         'berat_kotor' => 'decimal:3',
     ];
 
-    protected static function boot()
+    /**
+     * Override UUID generator bawaan Laravel agar menggunakan UUIDv7
+     */
+    public function newUniqueId(): string
     {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
-            }
-        });
+        return (string) Str::uuid7();
     }
 
     public function target()

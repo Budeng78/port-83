@@ -8,17 +8,26 @@ Route::middleware('auth:sanctum')
     ->prefix('timbangan')
     ->group(function () {
 
-        // =========================================================================
-        // POS 1: Penerimaan / Penimbangan Awal
-        // =========================================================================
         Route::prefix('pos1')->group(function () {
             Route::apiResource('target', Pos1TargetController::class);
             Route::get('target-aktif', [Pos1Timbang1Controller::class, 'getTargetAktif']);
+            Route::patch('target/{targetId}/status', [Pos1Timbang1Controller::class, 'updateStatus']);
             Route::get('live-data', [Pos1Timbang1Controller::class, 'getLiveData']);
             Route::post('stream', [Pos1Timbang1Controller::class, 'storeStream']);
-            Route::delete('cache/{id}', [Pos1Timbang1Controller::class, 'deleteCache']);
+            
+            // --- KELOMPOK ROUTE CACHE ---
+            Route::prefix('cache')->group(function () {
+                // Hapus Seluruh Cache per Target ID -> /timbangan/pos1/cache/target/{targetId}
+                Route::delete('target/{targetId}', [Pos1Timbang1Controller::class, 'clearCacheByTarget']);
+                
+                // Hapus 1 Item Cache -> /timbangan/pos1/cache/{id}
+                Route::delete('{id}', [Pos1Timbang1Controller::class, 'deleteCache']);
+            });
+
             Route::post('commit', [Pos1Timbang1Controller::class, 'commitFinal']);
         });
+    
+    
 
         // =========================================================================
         // POS 2: (Modul Tahap Berikutnya)

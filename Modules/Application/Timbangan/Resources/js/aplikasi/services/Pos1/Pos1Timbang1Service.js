@@ -35,11 +35,26 @@ export const deleteCache = async (id) => {
 };
 
 /**
- * 5. Commit Final: Pindahkan seluruh Cache ke Tabel Utama
+ * 5. Hapus SELURUH Cache berdasarkan Target ID
+ * Perbaikan: Menggunakan instance `api` dan URL prefix cache
+ */
+export const clearCacheByTarget = async (targetId) => {
+  return await api.delete(`${BASE_PATH}/cache/target/${targetId}`);
+};
+
+/**
+ * 6. Commit Final: Pindahkan seluruh Cache ke Tabel Utama
  * Payload: { target_id }
  */
 export const commitFinal = async (targetId) => {
   return await api.post(`${BASE_PATH}/commit`, {
     target_id: targetId,
   });
+};
+
+/**
+ * 7. Update status target (pending / active / finish)
+ */
+export const updateTargetStatus = async (targetId, status) => {
+  return await api.patch(`${BASE_PATH}/target/${targetId}/status`, { status });
 };

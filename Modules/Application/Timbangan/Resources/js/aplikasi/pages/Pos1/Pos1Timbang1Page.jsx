@@ -5,7 +5,9 @@ import {
     getLiveData,
     deleteCache,
     commitFinal,
-    storeStream
+    clearCacheByTarget,
+    storeStream,
+    updateTargetStatus
 } from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/Pos1Timbang1Service.js';
 
 const MQTT_URL = 'ws://192.168.1.102:9001';
@@ -23,14 +25,15 @@ export default function Pos1Timbang1Page() {
     // =========================================================
     const targetIdRef = useRef(null);
     const currentIndexRef = useRef(1);
+    const targetListRef = useRef([]); // Ref untuk menghindari stale closure pada polling
 
     // =========================================================
     // LOG & POLLING REF
     // =========================================================
     const logBoxRef = useRef(null);
-    const gridPollingRef = useRef(null); // polling grid staging saja (bukan live weight lagi)
+    const gridPollingRef = useRef(null);
     const isFetchingRef = useRef(false);
-    const mqttClientRef = useRef(null); // koneksi MQTT untuk live weight
+    const mqttClientRef = useRef(null);
 
     // =========================================================
     // UI & CONNECTION STATE
@@ -50,6 +53,11 @@ export default function Pos1Timbang1Page() {
     const [packValues, setPackValues] = useState({});
     const [isFinished, setIsFinished] = useState(false);
 
+    // Synchronize targetList state ke targetListRef
+    useEffect(() => {
+        targetListRef.current = targetList;
+    }, [targetList]);
+
     // =========================================================
     // HELPER FUNCTIONS
     // =========================================================
@@ -58,11 +66,11 @@ export default function Pos1Timbang1Page() {
         setLogs((prev) => [...prev, `[${time}] ${text}`]);
     }, []);
 
-    const setNextPack = (next) => {
+    const setNextPack = useCallback((next) => {
         const value = Number(next) || 1;
         currentIndexRef.current = value;
         setCurrentIndex(value);
-    };
+    }, []);
 
     // Auto scroll console log
     useEffect(() => {
@@ -71,25 +79,36 @@ export default function Pos1Timbang1Page() {
         }
     }, [logs]);
 
-    // Load Target Aktif saat komponen mount
-    useEffect(() => {
-        fetchTargetAktif();
-    }, []);
-
-    const fetchTargetAktif = async () => {
+    const fetchTargetAktif = useCallback(async () => {
         try {
             const res = await getTargetAktif();
             if (res.data?.success) {
-                setTargetList(res.data.data || []);
+                const data = res.data.data || [];
+                setTargetList(data);
+                targetListRef.current = data;
             }
         } catch (err) {
             addLog('Gagal mengambil daftar target aktif.');
         }
-    };
+    }, [addLog]);
+
+    // Load Target Aktif saat komponen mount
+    useEffect(() => {
+        fetchTargetAktif();
+    }, [fetchTargetAktif]);
 
     // =========================================================
     // MQTT — LIVE WEIGHT
     // =========================================================
+    const disconnectMqtt = useCallback(() => {
+        if (mqttClientRef.current) {
+            mqttClientRef.current.removeAllListeners();
+            mqttClientRef.current.end(true);
+            mqttClientRef.current = null;
+        }
+        setIsConnected(false);
+    }, []);
+
     const connectMqtt = useCallback(() => {
         if (mqttClientRef.current) return;
 
@@ -134,14 +153,6 @@ export default function Pos1Timbang1Page() {
         mqttClientRef.current = client;
     }, [addLog]);
 
-    const disconnectMqtt = useCallback(() => {
-        if (mqttClientRef.current) {
-            mqttClientRef.current.end(true);
-            mqttClientRef.current = null;
-        }
-        setIsConnected(false);
-    }, []);
-
     // Stop semua pemantauan (MQTT + polling grid)
     const disconnectTimbangan = useCallback(() => {
         disconnectMqtt();
@@ -155,7 +166,7 @@ export default function Pos1Timbang1Page() {
     }, [disconnectMqtt, addLog]);
 
     // =========================================================
-    // POLLING GRID STAGING (cache_data) — TETAP REST
+    // POLLING GRID STAGING (cache_data) — REST API
     // =========================================================
     const ambilLiveData = useCallback(async () => {
         const activeTargetId = targetIdRef.current;
@@ -166,7 +177,7 @@ export default function Pos1Timbang1Page() {
             const res = await getLiveData(activeTargetId);
             if (!res.data?.success) return;
 
-            const { cache_data, next_nomor_bal } = res.data;
+            const { cache_data, active_cache, next_nomor_bal } = res.data;
 
             // Map data cache ke tampilan grid pack
             const values = {};
@@ -180,23 +191,41 @@ export default function Pos1Timbang1Page() {
                 });
             }
 
-            // Cegah re-render berlebihan jika nilai packValues sama persis
+            const totalTerisi = Object.keys(values).length;
+            const currentTarget = targetListRef.current.find((item) => String(item.id) === String(activeTargetId));
+            const targetBal = Number(currentTarget?.jumlah_bal) || 0;
+
+            // Logika Notifikasi
+            if (targetBal > 0) {
+                if (next_nomor_bal > targetBal) {
+                    addLog(`⚠️ PERINGATAN: Input timbang (${next_nomor_bal - 1} bal) MELEBIHI target kerja (${targetBal} bal)!`);
+                } else if (totalTerisi === targetBal) {
+                    addLog(`✅ INFORMASI: Jumlah bal yang ditimbang sudah PAS dengan target (${targetBal} bal).`);
+                }
+            }
+
             setPackValues((prev) => {
                 const isSame = JSON.stringify(prev) === JSON.stringify(values);
                 return isSame ? prev : values;
             });
 
-            // Set urutan nomor bal berikutnya
+            if (active_cache) {
+                setWeightDisplay(Number(active_cache.berat_kotor).toFixed(2));
+                setTimeDisplay(
+                    new Date(active_cache.updated_at).toLocaleTimeString('id-ID', { hour12: false })
+                );
+            }
+
             if (next_nomor_bal) {
                 setNextPack(next_nomor_bal);
                 setTotalBoxes((prev) => Math.max(5, Math.ceil(next_nomor_bal / 5) * 5));
             }
         } catch (err) {
-            addLog('Gagal menyinkronkan data grid dari server.');
+            addLog('Gagal menyinkronkan data live dari server.');
         } finally {
             isFetchingRef.current = false;
         }
-    }, [addLog]);
+    }, [addLog, setNextPack]);
 
     // =========================================================
     // TOGGLE MONITORING / CONNECT
@@ -217,6 +246,7 @@ export default function Pos1Timbang1Page() {
         addLog('Memulai pemantauan live data Pos 1 Timbang 1 (MQTT)...');
 
         ambilLiveData();
+        if (gridPollingRef.current) clearInterval(gridPollingRef.current);
         gridPollingRef.current = setInterval(ambilLiveData, 5000);
     };
 
@@ -227,8 +257,8 @@ export default function Pos1Timbang1Page() {
         const activeTargetId = targetIdRef.current;
         if (!activeTargetId) return;
 
-        if (!berat) {
-            alert(`Nilai bal nomor ${nomor} kosong!`);
+        if (!berat || Number(berat) <= 0) {
+            alert(`Nilai bal nomor ${nomor} tidak valid!`);
             return;
         }
 
@@ -283,6 +313,62 @@ export default function Pos1Timbang1Page() {
     };
 
     // =========================================================
+    // CANCEL / RESET SESSION + CLEAR CACHE SERVER
+    // =========================================================
+    const handleCancel = async () => {
+        const activeTargetId = targetIdRef.current;
+
+        if (!activeTargetId) {
+            resetUI();
+            return;
+        }
+
+        const confirmCancel = window.confirm(
+            'Apakah Anda yakin ingin membatalkan? Seluruh data staging/cache untuk target ini di server akan DIHAPUS!'
+        );
+        if (!confirmCancel) return;
+
+        try {
+            addLog(`Membersihkan cache server untuk Target ID: ${activeTargetId}...`);
+
+            const res = await clearCacheByTarget(activeTargetId);
+            const responseData = res.data || res;
+
+            if (responseData.success) {
+                addLog(responseData.message || 'Cache server berhasil dibersihkan.');
+
+                // Kembalikan status target ke pending
+                try {
+                    await updateTargetStatus(activeTargetId, 'pending');
+                } catch (err) {
+                    addLog('Gagal mengembalikan status target ke pending.');
+                }
+
+                resetUI();
+                fetchTargetAktif();
+            } else {
+                addLog(`Gagal: ${responseData.message || 'Gagal membersihkan cache.'}`);
+            }
+        } catch (err) {
+            console.error('Error clear cache:', err);
+            addLog(`Gagal menghapus cache di server: ${err.response?.data?.message || err.message}`);
+        }
+    };
+
+const resetUI = () => {
+    disconnectTimbangan();
+    targetIdRef.current = null;
+    setSelectedTargetId('');
+    setPackValues({});
+    setWeightDisplay('0.00');
+    setTimeDisplay('-');
+    setNextPack(1);
+    setTotalBoxes(5);
+    setIsFinished(false);
+    addLog('Sesi penimbangan dibatalkan dan form di-reset.');
+};
+
+    // =========================================================
     // FINISH / COMMIT FINAL
     // =========================================================
     const handleFinish = async () => {
@@ -299,15 +385,50 @@ export default function Pos1Timbang1Page() {
             const res = await commitFinal(activeTargetId);
 
             if (res.data?.success) {
-                disconnectTimbangan();
-                setIsFinished(true);
                 addLog('Seluruh data penimbangan Pos 1 berhasil disimpan secara permanen!');
+
+                // Reset halaman kembali ke kondisi awal (fresh)
+                disconnectTimbangan();
+                targetIdRef.current = null;
+                setSelectedTargetId('');
+                setPackValues({});
+                setWeightDisplay('0.00');
+                setTimeDisplay('-');
+                setNextPack(1);
+                setTotalBoxes(5);
+                setIsFinished(false); // tidak perlu badge "Selesai", karena form sudah fresh lagi
+
+                fetchTargetAktif(); // refresh dropdown target aktif
             }
         } catch (err) {
             addLog(err.response?.data?.message || 'Gagal melakukan commit final.');
         }
     };
+    const handleSelectTarget = async (newTargetId) => {
+        const previousTargetId = selectedTargetId;
 
+        setSelectedTargetId(newTargetId);
+        targetIdRef.current = newTargetId;
+
+        // Kalau ada target sebelumnya yang belum di-commit, kembalikan ke pending dulu
+        if (previousTargetId && previousTargetId !== newTargetId) {
+            try {
+                await updateTargetStatus(previousTargetId, 'pending');
+            } catch (err) {
+                addLog('Gagal mengembalikan status target sebelumnya.');
+            }
+        }
+
+        if (newTargetId) {
+            try {
+                await updateTargetStatus(newTargetId, 'active');
+                addLog('Target kerja dipilih, status diubah menjadi aktif.');
+                fetchTargetAktif(); // refresh supaya dropdown ikut update badge/status terbaru
+            } catch (err) {
+                addLog('Gagal mengubah status target menjadi aktif.');
+            }
+        }
+    };
     // Cleanup saat unmount
     useEffect(() => {
         return () => {
@@ -340,11 +461,14 @@ export default function Pos1Timbang1Page() {
                 >
                     {[0, 1, 2, 3, 4].map((offset) => {
                         const nomor = start + offset;
-                        const value = nomor === currentIndex && isConnected
+                        const isSavedInCache = packValues[nomor] !== undefined && packValues[nomor] !== '';
+                        const isActive = nomor === currentIndex;
+                        
+                        const value = isActive && isConnected
                             ? weightDisplay
                             : (packValues[nomor] ?? '');
-                        const isActive = nomor === currentIndex;
-                        const hasValue = value !== '';
+
+                        const canSave = (isActive || isSavedInCache) && Number(value) > 0;
 
                         return (
                             <div
@@ -371,39 +495,35 @@ export default function Pos1Timbang1Page() {
                                     />
                                 </div>
 
-                                {/* GROUP ICON AKSI (X KIRI & V KANAN) */}
+                                {/* GROUP ICON AKSI */}
                                 <div className="flex h-full flex-shrink-0 border-l border-gray-200">
 
-                                    {/* ICON X (HAPUS) - KIRI */}
+                                    {/* ICON X (HAPUS STAGING) */}
                                     <button
                                         type="button"
-                                        disabled={!hasValue || isFinished}
-                                        onClick={() => hasValue && handleDeletePack(nomor)}
+                                        disabled={!isSavedInCache || isFinished}
+                                        onClick={() => isSavedInCache && handleDeletePack(nomor)}
                                         className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center border-r border-gray-200 transition-colors ${
-                                            isActive && hasValue && !isFinished
+                                            isSavedInCache && !isFinished
                                                 ? 'text-red-600 hover:bg-red-100 hover:text-red-800 active:bg-red-200'
-                                                : hasValue && !isFinished
-                                                    ? 'text-gray-400 hover:text-red-600'
-                                                    : 'text-gray-300 cursor-not-allowed'
+                                                : 'text-gray-300 cursor-not-allowed'
                                         }`}
-                                        title={hasValue ? `Hapus bal ${nomor}` : ''}
+                                        title={isSavedInCache ? `Hapus bal ${nomor}` : ''}
                                     >
                                         ✕
                                     </button>
 
-                                    {/* ICON V (SIMPAN) - KANAN */}
+                                    {/* ICON V (SIMPAN STAGING) */}
                                     <button
                                         type="button"
-                                        disabled={!hasValue || isFinished}
-                                        onClick={() => hasValue && handleSavePack(nomor, value)}
+                                        disabled={!canSave || isFinished}
+                                        onClick={() => canSave && handleSavePack(nomor, value)}
                                         className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center transition-colors ${
-                                            isActive && hasValue && !isFinished
+                                            canSave && !isFinished
                                                 ? 'text-emerald-600 hover:bg-emerald-100 hover:text-emerald-800 active:bg-emerald-200'
-                                                : hasValue && !isFinished
-                                                    ? 'text-gray-400 hover:text-emerald-600'
-                                                    : 'text-gray-300 cursor-not-allowed'
+                                                : 'text-gray-300 cursor-not-allowed'
                                         }`}
-                                        title={hasValue ? `Simpan bal ${nomor}` : ''}
+                                        title={canSave ? `Simpan bal ${nomor}` : ''}
                                     >
                                         ✓
                                     </button>
@@ -440,16 +560,13 @@ export default function Pos1Timbang1Page() {
                             </label>
                             <select
                                 value={selectedTargetId}
-                                onChange={(e) => {
-                                    setSelectedTargetId(e.target.value);
-                                    targetIdRef.current = e.target.value;
-                                }}
+                                onChange={(e) => handleSelectTarget(e.target.value)}
                                 disabled={isConnected || isFinished}
                                 className="w-full p-2 text-xs border rounded-lg bg-gray-50 font-medium outline-none focus:border-blue-500 disabled:opacity-60"
                             >
                                 <option value="">-- Pilih Target Kerja --</option>
                                 {targetList
-                                    .filter((item) => !item.is_finished)
+                                    .filter((item) => item.status !== 'finish')
                                     .map((item) => (
                                         <option key={item.id} value={item.id}>
                                             {`${item.tanggal_formatted || '-'} | ${item.jenis_tbk || '-'} | ${item.tahun || '-'} | ${item.s_k || '-'} | ${item.jumlah_bal || 0}`}
@@ -505,15 +622,26 @@ export default function Pos1Timbang1Page() {
                         )}
                     </div>
 
-                    {!isFinished && (
+                    {/* GROUP TOMBOL AKSI FINAL / CANCEL */}
+                    <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={handleFinish}
-                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs shadow hover:bg-emerald-700 transition-colors"
+                            onClick={handleCancel}
+                            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs border border-gray-300 transition-colors"
                         >
-                            Commit Final (Selesai)
+                            Batal / Reset
                         </button>
-                    )}
+
+                        {!isFinished && (
+                            <button
+                                type="button"
+                                onClick={handleFinish}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow transition-colors"
+                            >
+                                Commit Final (Selesai)
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 md:gap-3 max-h-72 overflow-y-auto p-1 border rounded-lg bg-gray-50/50">

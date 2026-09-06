@@ -9,6 +9,7 @@ class Pos1Timbang1 extends BaseModel
     protected $table = 'timbangan_pos1_timbang1';
 
     protected $fillable = [
+        'id', // PERBAIKAN: Masukkan id ke fillable
         'target_id',
         'nomor_bal',
         'berat_kotor',
@@ -24,4 +25,3 @@ class Pos1Timbang1 extends BaseModel
         return $this->belongsTo(Pos1Target::class, 'target_id');
     }
 }
-
