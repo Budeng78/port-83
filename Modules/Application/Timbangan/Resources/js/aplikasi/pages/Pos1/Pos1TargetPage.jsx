@@ -11,24 +11,31 @@ import {
     Plus,
     Printer,
     FileText,
+    RefreshCw,
 } from 'lucide-react';
 
 import pos1TargetService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/pos1TargetService.js';
 import Pos1TargetForm from './components/Pos1TargetForm';
 import Pos1TargetTable from './components/Pos1TargetTable';
+import Pos1TargetDetailModal from './components/Pos1TargetDetailModal';
 
 export default function Pos1TargetPage({ onPrint }) {
     const today = new Date().toISOString().split('T')[0];
-
+    
     // State Filtering & Data
     const [selectedDate, setSelectedDate] = useState(today);
     const [searchQuery, setSearchQuery] = useState('');
     const [dataList, setDataList] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // State Modal & Form
+    // State Modal Form & Detail
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [generatingBatch, setGeneratingBatch] = useState(false);
+    
+    // State Khusus Modal Detail
+    const [detailItem, setDetailItem] = useState(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     // Fetch Data
     const fetchData = useCallback(async () => {
@@ -66,6 +73,7 @@ export default function Pos1TargetPage({ onPrint }) {
 
         return dataList.filter((item) =>
             [
+                item.kode_batch,
                 item.nomor_aturan,
                 item.jenis_tbk,
                 item.tahun,
@@ -80,16 +88,44 @@ export default function Pos1TargetPage({ onPrint }) {
             )
         );
     }, [dataList, searchQuery]);
+    
+    // Handler Buka Modal Create + Auto Generate Kode Batch
+    // Handler Buka Modal Create + Auto Generate Kode Batch
+    const handleOpenCreateModal = async () => {
+        setGeneratingBatch(true);
+        
+        // Set default awal secara sinkron sebelum API dipanggil
+        const defaultData = {
+            tanggal: selectedDate,
+            kode_batch: '',
+        };
 
-    // Handlers Modal
-    const handleOpenCreateModal = () => {
-        setEditingItem(null);
-        setIsModalOpen(true);
+        try {
+            const response = await pos1TargetService.generateBatchCode(selectedDate);
+            const batchCode = response?.kode_batch || response?.data?.kode_batch || '';
+
+            setEditingItem({
+                ...defaultData,
+                kode_batch: batchCode,
+            });
+        } catch (error) {
+            console.error("Gagal generate kode batch:", error);
+            setEditingItem(defaultData);
+        } finally {
+            setGeneratingBatch(false);
+            setIsModalOpen(true);
+        }
     };
 
     const handleOpenEditModal = (item) => {
         setEditingItem(item);
         setIsModalOpen(true);
+    };
+
+    // Handler Buka Modal Detail
+    const handleDetailClick = (item) => {
+        setDetailItem(item);
+        setIsDetailOpen(true);
     };
 
     const handleDeleteClick = async (id) => {
@@ -105,9 +141,9 @@ export default function Pos1TargetPage({ onPrint }) {
         }
     };
 
-    const handlePrintClick = () => {
+    const handlePrintClick = (singleRow = null) => {
         if (onPrint) {
-            onPrint(selectedDate, filteredData);
+            onPrint(singleRow || selectedDate, singleRow ? [singleRow] : filteredData);
         } else {
             window.print();
         }
@@ -117,7 +153,7 @@ export default function Pos1TargetPage({ onPrint }) {
         <div className="space-y-6 p-4 md:p-6 bg-slate-50 min-h-screen">
 
             {/* CARD 1: CONTROL PANEL */}
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
                     {/* Judul & Info */}
@@ -165,7 +201,7 @@ export default function Pos1TargetPage({ onPrint }) {
 
                             <input
                                 type="text"
-                                placeholder="Cari No Aturan, Jenis, Tahun, Grade..."
+                                placeholder="Cari Kode Batch, No Aturan, Jenis..."
                                 value={searchQuery}
                                 onChange={(e) =>
                                     setSearchQuery(e.target.value)
@@ -174,27 +210,39 @@ export default function Pos1TargetPage({ onPrint }) {
                             />
                         </div>
 
-                        {/* Print */}
+                        {/* Reload Data */}
                         <button
                             type="button"
-                            onClick={handlePrintClick}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+                            onClick={fetchData}
+                            disabled={loading}
+                            className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs disabled:opacity-50 cursor-pointer"
+                            title="Refresh Data"
+                        >
+                            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+                        </button>
+
+                        {/* Print All */}
+                        <button
+                            type="button"
+                            onClick={() => handlePrintClick()}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer"
                         >
                             <Printer
                                 size={15}
                                 className="text-slate-600"
                             />
-                            Print
+                            Print Rekap
                         </button>
 
                         {/* Tambah Target */}
                         <button
                             type="button"
                             onClick={handleOpenCreateModal}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-950 transition shadow-2xs"
+                            disabled={generatingBatch}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-950 transition shadow-xs disabled:opacity-50 cursor-pointer"
                         >
-                            <Plus size={16} />
-                            Buat Target Kerja
+                            <Plus size={16} className={generatingBatch ? 'animate-spin' : ''} />
+                            {generatingBatch ? 'Menyiapkan...' : 'Buat Target Kerja'}
                         </button>
                     </div>
                 </div>
@@ -205,17 +253,30 @@ export default function Pos1TargetPage({ onPrint }) {
                 data={filteredData}
                 loading={loading}
                 selectedDate={selectedDate}
+                onDetail={handleDetailClick}
                 onEdit={handleOpenEditModal}
                 onDelete={handleDeleteClick}
+                onPrint={handlePrintClick}
             />
 
-            {/* MODAL FORM */}
+            {/* MODAL FORM (Create / Edit) */}
             <Pos1TargetForm
+                key={editingItem?.id || editingItem?.kode_batch || (isModalOpen ? 'open' : 'closed')}
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingItem(null);
+                }}
                 onSuccess={fetchData}
                 initialData={editingItem}
                 selectedDate={selectedDate}
+            />
+
+            {/* MODAL DETAIL */}
+            <Pos1TargetDetailModal
+                isOpen={isDetailOpen}
+                onClose={() => setIsDetailOpen(false)}
+                data={detailItem}
             />
         </div>
     );

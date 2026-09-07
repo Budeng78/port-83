@@ -4,6 +4,7 @@ namespace Modules\Application\Timbangan\Http\Controllers\Pos1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Modules\Application\Timbangan\Http\Request\Pos1\Pos1TargetRequest;
 use Modules\Application\Timbangan\Services\Pos1\Pos1TargetService;
 
@@ -60,6 +61,19 @@ class Pos1TargetController extends Controller
 
         return response()->json([
             'message' => 'Target berhasil dihapus.',
+        ]);
+    }
+
+    public function generateBatchCode(Request $request): JsonResponse
+    {
+        $tanggal = $request->query('tanggal', now()->format('Y-m-d'));
+        
+        // PERBAIKAN: Gunakan $this->service, bukan $this->pos1TargetService
+        $kodeBatch = $this->service->generateBatchCode($tanggal);
+
+        return response()->json([
+            'success' => true,
+            'kode_batch' => $kodeBatch,
         ]);
     }
 }

@@ -16,7 +16,7 @@ class Menu extends BaseModel
         'label',
         'path',
         'icon',
-        'permission_name',
+        'permission_key',
         'order',
         'is_active',
     ];

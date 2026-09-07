@@ -11,9 +11,10 @@ return new class extends Migration
     {
         Schema::create('timbangan_pos1_target', function (Blueprint $table) {
             $table->uuid('id')->primary();
-
+            $table->string('kode_batch', 30)->unique();
             $table->date('tanggal');
             $table->string('nomor_aturan', 100);
+            $table->enum('type', ['krosok', 'precut'])->after('jenis_tbk');
             $table->string('jenis_tbk', 100);
             $table->string('tahun', 20);
             $table->string('grade', 100);

@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
+    Eye,
     Edit,
     Trash2,
+    Printer,
     Loader2,
     ArrowUpDown,
     ArrowUp,
@@ -12,11 +14,13 @@ export default function Pos1TargetTable({
     data,
     loading,
     selectedDate,
+    onDetail,
     onEdit,
     onDelete,
+    onPrint,
 }) {
     const [sortConfig, setSortConfig] = useState({
-        key: 'nomor_aturan',
+        key: 'kode_batch',
         direction: 'asc',
     });
 
@@ -31,6 +35,21 @@ export default function Pos1TargetTable({
         const [year, month, day] = parts;
 
         return `${day}/${month}/${year.slice(-2)}`;
+    };
+
+    const formatCreatedDateTime = (dateTimeString) => {
+        if (!dateTimeString) return null;
+        
+        const dateObj = new Date(dateTimeString);
+        if (isNaN(dateObj.getTime())) return formatDateToDMY(dateTimeString);
+
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = String(dateObj.getFullYear()).slice(-2);
+        const hours = String(dateObj.getHours()).padStart(2, '0');
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     };
 
     const handleSort = (key) => {
@@ -114,7 +133,7 @@ export default function Pos1TargetTable({
 
                 <span className="text-xs text-slate-500">
                     Total Target:{' '}
-                    <strong>{data?.length || 0}</strong> Aturan
+                    <strong>{data?.length || 0}</strong> Batch
                 </span>
             </div>
 
@@ -128,15 +147,33 @@ export default function Pos1TargetTable({
                                 NO
                             </th>
 
-                            <th className="p-3 w-28 border-r border-slate-200">
-                                TANGGAL
+                            <th
+                                className="p-3 border-r border-slate-200 cursor-pointer hover:bg-slate-200/70 transition group"
+                                onClick={() => handleSort('kode_batch')}
+                            >
+                                <div className="flex items-center justify-between gap-1">
+                                    <span>KODE BATCH / DIBUAT</span>
+                                    {renderSortIcon('kode_batch')}
+                                </div>
                             </th>
 
                             <th
-                                className="p-3 w-44 border-r border-slate-200 cursor-pointer hover:bg-slate-200/70 transition group"
-                                onClick={() =>
-                                    handleSort('nomor_aturan')
-                                }
+                                className="p-3 text-right w-32 border-r border-slate-200 cursor-pointer hover:bg-slate-200/70 transition group"
+                                onClick={() => handleSort('jumlah_bal')}
+                            >
+                                <div className="flex items-center justify-end gap-1">
+                                    <span>JUMLAH BAL</span>
+                                    {renderSortIcon('jumlah_bal')}
+                                </div>
+                            </th>
+
+                            <th className="p-3 w-32 border-r border-slate-200">
+                                TGL TARGET
+                            </th>
+
+                            <th
+                                className="p-3 border-r border-slate-200 cursor-pointer hover:bg-slate-200/70 transition group"
+                                onClick={() => handleSort('nomor_aturan')}
                             >
                                 <div className="flex items-center justify-between gap-1">
                                     <span>NOMOR ATURAN</span>
@@ -144,39 +181,11 @@ export default function Pos1TargetTable({
                                 </div>
                             </th>
 
-                            <th className="p-3 w-28 border-r border-slate-200">
-                                JENIS TBK
-                            </th>
-
-                            <th className="p-3 w-20 border-r border-slate-200">
-                                TAHUN
-                            </th>
-
-                            <th className="p-3 w-20 border-r border-slate-200">
-                                GRADE
-                            </th>
-
-                            <th className="p-3 text-center w-24 border-r border-slate-200">
-                                S.K
-                            </th>
-
-                            <th className="p-3 text-center w-24 border-r border-slate-200">
-                                TYPE
-                            </th>
-
-                            <th className="p-3 text-right w-28 border-r border-slate-200">
-                                TARGET BAL
-                            </th>
-
-                            <th className="p-3 text-right w-24 border-r border-slate-200">
-                                TARA
-                            </th>
-
-                            <th className="p-3 text-center w-24 border-r border-slate-200">
+                            <th className="p-3 text-center w-28 border-r border-slate-200">
                                 STATUS
                             </th>
 
-                            <th className="p-3 text-center w-24">
+                            <th className="p-3 text-center w-36">
                                 AKSI
                             </th>
                         </tr>
@@ -186,7 +195,7 @@ export default function Pos1TargetTable({
                         {loading ? (
                             <tr>
                                 <td
-                                    colSpan="12"
+                                    colSpan="7"
                                     className="p-8 text-center text-slate-400"
                                 >
                                     <div className="flex items-center justify-center gap-2">
@@ -210,40 +219,28 @@ export default function Pos1TargetTable({
                                         {idx + 1}
                                     </td>
 
+                                    {/* KODE BATCH & TANGGAL DIBUAT */}
+                                    <td className="p-3 border-r border-slate-100">
+                                        <div className="flex flex-col">
+                                            <span className="font-mono font-bold text-blue-900">
+                                                {row.kode_batch || '-'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                                Dibuat: {formatCreatedDateTime(row.created_at || row.created_date || row.tanggal_dibuat) || '-'}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <td className="p-3 text-right font-mono font-bold text-slate-800 border-r border-slate-100">
+                                        {row.jumlah_bal ?? 0} Bal
+                                    </td>
+
                                     <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
                                         {formatDateToDMY(row.tanggal)}
                                     </td>
 
-                                    <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
+                                    <td className="p-3 border-r border-slate-100 font-semibold text-slate-700">
                                         {row.nomor_aturan}
-                                    </td>
-
-                                    <td className="p-3 uppercase border-r border-slate-100 font-semibold text-slate-700">
-                                        {row.jenis_tbk}
-                                    </td>
-
-                                    <td className="p-3 border-r border-slate-100">
-                                        {row.tahun}
-                                    </td>
-
-                                    <td className="p-3 border-r border-slate-100 font-semibold">
-                                        {row.grade}
-                                    </td>
-
-                                    <td className="p-3 text-center border-r border-slate-100 font-medium">
-                                        {row.s_k}
-                                    </td>
-
-                                    <td className="p-3 text-center border-r border-slate-100 uppercase font-semibold">
-                                        {row.type}
-                                    </td>
-
-                                    <td className="p-3 text-right font-mono font-bold text-blue-900 border-r border-slate-100">
-                                        {row.jumlah_bal} Bal
-                                    </td>
-
-                                    <td className="p-3 text-right font-mono border-r border-slate-100">
-                                        {Number(row.tara ?? 0).toFixed(3)}
                                     </td>
 
                                     <td className="p-3 text-center border-r border-slate-100">
@@ -254,9 +251,16 @@ export default function Pos1TargetTable({
                                         <div className="flex items-center justify-center gap-1">
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    onEdit(row)
-                                                }
+                                                onClick={() => onDetail(row)}
+                                                className="p-1 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 transition"
+                                                title="Detail Target"
+                                            >
+                                                <Eye size={14} />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => onEdit(row)}
                                                 className="p-1 text-slate-500 hover:text-blue-600 rounded hover:bg-slate-100 transition"
                                                 title="Edit Target"
                                             >
@@ -265,9 +269,16 @@ export default function Pos1TargetTable({
 
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    onDelete(row.id)
-                                                }
+                                                onClick={() => onPrint(row)}
+                                                className="p-1 text-slate-500 hover:text-emerald-600 rounded hover:bg-slate-100 transition"
+                                                title="Print Target"
+                                            >
+                                                <Printer size={14} />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => onDelete(row.id)}
                                                 className="p-1 text-slate-500 hover:text-rose-600 rounded hover:bg-slate-100 transition"
                                                 title="Hapus Target"
                                             >
@@ -280,7 +291,7 @@ export default function Pos1TargetTable({
                         ) : (
                             <tr>
                                 <td
-                                    colSpan="12"
+                                    colSpan="7"
                                     className="p-8 text-center text-slate-400"
                                 >
                                     Belum ada target kerja R&D yang diinput
@@ -298,13 +309,11 @@ export default function Pos1TargetTable({
                 <div className="flex justify-end mb-1">
                     <button
                         type="button"
-                        onClick={() =>
-                            handleSort('nomor_aturan')
-                        }
+                        onClick={() => handleSort('kode_batch')}
                         className="text-[11px] flex items-center gap-1 text-slate-600 font-semibold bg-white px-2.5 py-1 rounded border border-slate-200"
                     >
-                        <span>Urutkan Aturan</span>
-                        {renderSortIcon('nomor_aturan')}
+                        <span>Urutkan Kode Batch</span>
+                        {renderSortIcon('kode_batch')}
                     </button>
                 </div>
 
@@ -322,21 +331,31 @@ export default function Pos1TargetTable({
                             key={row.id || idx}
                             className="bg-white rounded-lg border border-slate-200 p-3.5 space-y-2 shadow-2xs"
                         >
-                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                <span className="font-bold text-xs text-blue-900">
-                                    {row.nomor_aturan}
-                                </span>
+                            <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+                                <div>
+                                    <div className="font-mono font-bold text-xs text-blue-900">
+                                        {row.kode_batch || '-'}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                        Dibuat: {formatCreatedDateTime(row.created_at || row.created_date || row.tanggal_dibuat) || '-'}
+                                    </div>
+                                    <div className="text-[11px] text-slate-600 font-medium mt-1">
+                                        {row.nomor_aturan} · Tgl Target: {formatDateToDMY(row.tanggal)}
+                                    </div>
+                                </div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[11px] font-semibold text-slate-500">
-                                        {formatDateToDMY(row.tanggal)}
-                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => onDetail(row)}
+                                        className="text-slate-400 hover:text-indigo-600"
+                                    >
+                                        <Eye size={14} />
+                                    </button>
 
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            onEdit(row)
-                                        }
+                                        onClick={() => onEdit(row)}
                                         className="text-slate-400 hover:text-blue-600"
                                     >
                                         <Edit size={14} />
@@ -344,9 +363,15 @@ export default function Pos1TargetTable({
 
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            onDelete(row.id)
-                                        }
+                                        onClick={() => onPrint(row)}
+                                        className="text-slate-400 hover:text-emerald-600"
+                                    >
+                                        <Printer size={14} />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => onDelete(row.id)}
                                         className="text-slate-400 hover:text-rose-600"
                                     >
                                         <Trash2 size={14} />
@@ -357,64 +382,10 @@ export default function Pos1TargetTable({
                             <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div>
                                     <span className="text-slate-400 block text-[10px]">
-                                        JENIS TBK
+                                        JUMLAH BAL
                                     </span>
-                                    <span className="font-bold uppercase text-slate-800">
-                                        {row.jenis_tbk}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-slate-400 block text-[10px]">
-                                        TAHUN
-                                    </span>
-                                    <span className="text-slate-700 font-medium">
-                                        {row.tahun}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-slate-400 block text-[10px]">
-                                        GRADE
-                                    </span>
-                                    <span className="font-bold text-slate-800">
-                                        {row.grade}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-slate-400 block text-[10px]">
-                                        S.K
-                                    </span>
-                                    <span className="text-slate-700 font-medium">
-                                        {row.s_k}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-slate-400 block text-[10px]">
-                                        TYPE
-                                    </span>
-                                    <span className="font-semibold uppercase text-slate-800">
-                                        {row.type}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-slate-400 block text-[10px]">
-                                        TARA
-                                    </span>
-                                    <span className="font-mono font-semibold text-slate-800">
-                                        {Number(row.tara ?? 0).toFixed(3)}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-slate-400 block text-[10px]">
-                                        TARGET BAL
-                                    </span>
-                                    <span className="font-mono font-bold text-blue-900">
-                                        {row.jumlah_bal} Bal
+                                    <span className="font-mono font-bold text-slate-800">
+                                        {row.jumlah_bal ?? 0} Bal
                                     </span>
                                 </div>
 

@@ -904,7 +904,7 @@ class UserMatrixController
                 'menus.label',
                 'menus.path',
                 'menus.icon',
-                'menus.permission_name',
+                'menus.permission_key',
                 'menus.order',
             ])
 
@@ -994,8 +994,8 @@ class UserMatrixController
                     'icon' =>
                         $menu->icon,
 
-                    'permission_name' =>
-                        $menu->permission_name,
+                    'permission_key' =>
+                        $menu->permission_key,
 
                     'order' =>
                         $menu->order,

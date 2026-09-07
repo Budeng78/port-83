@@ -34,7 +34,19 @@ const pos1TargetService = {
 
         return response.data;
     },
+
+    // PERBAIKAN: Hilangkan 'export const' & gunakan format method objek
+    generateBatchCode: async (tanggal) => {
+        try {
+            const response = await axios.get(`${BASE_URL}/generate-batch-code`, {
+                params: { tanggal },
+            });
+            return response.data; // Mengembalikan { success: true, kode_batch: "..." }
+        } catch (error) {
+            console.error("Error generating batch code:", error);
+            throw error;
+        }
+    },
 };
 
 export default pos1TargetService;
-
