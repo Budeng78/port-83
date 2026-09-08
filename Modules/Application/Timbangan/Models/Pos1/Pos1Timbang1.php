@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Application\Timbangan\Models;
+namespace Modules\Application\Timbangan\Models\Pos1;
 
 use App\Models\BaseModel;
 
@@ -17,11 +17,11 @@ class Pos1Timbang1 extends BaseModel
 
     protected $casts = [
         'nomor_bal'   => 'integer',
-        'berat_kotor' => 'decimal:3',
+        'berat_kotor' => 'decimal:2',
     ];
 
     public function target()
     {
-        return $this->belongsTo(Pos1Target::class, 'target_id');
+        return $this->belongsTo(Target::class, 'target_id');
     }
 }

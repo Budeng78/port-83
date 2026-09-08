@@ -1,6 +1,7 @@
 <?php
 
-namespace Modules\Application\Timbangan\Models;
+
+namespace Modules\Application\Timbangan\Models\Pos1;
 
 use App\Models\BaseModel;
 use Carbon\Carbon;

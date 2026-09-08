@@ -1,8 +1,27 @@
-import React from 'react';
-import { X, Layers, Calendar, Clock, FileText, Tag, CheckCircle2 } from 'lucide-react';
 
-export default function Pos1TargetDetailModal({ isOpen, onClose, data }) {
-    if (!isOpen || !data) return null;
+import React from 'react';
+import { X, Edit, Trash2 } from 'lucide-react';
+
+export default function Pos1TargetDetailModal({
+    isOpen,
+    onClose,
+    batchData,
+    onEditItem,
+}) {
+    if (!isOpen || !batchData) return null;
+
+    const handleDeleteItem = async (itemId) => {
+        if (!confirm('Yakin ingin menghapus item ini?')) return;
+
+        try {
+            // Import service jika diperlukan
+            const pos1TargetService = await import('@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/pos1TargetService.js').then(m => m.default);
+            await pos1TargetService.delete(itemId);
+            onClose(); // Close modal after delete
+        } catch (error) {
+            console.error('Gagal menghapus item:', error);
+        }
+    };
 
     const formatDateToDMY = (dateString) => {
         if (!dateString) return '-';
@@ -10,132 +29,162 @@ export default function Pos1TargetDetailModal({ isOpen, onClose, data }) {
         const parts = cleanDate.split('-');
         if (parts.length !== 3) return dateString;
         const [year, month, day] = parts;
-        return `${day}/${month}/${year}`;
+        return `${day}/${month}/${year.slice(-2)}`;
     };
 
-    const formatCreatedDateTime = (dateTimeString) => {
-        if (!dateTimeString) return '-';
-        const dateObj = new Date(dateTimeString);
-        if (isNaN(dateObj.getTime())) return dateTimeString;
-
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        const hours = String(dateObj.getHours()).padStart(2, '0');
-        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-
-        return `${day}/${month}/${year} pukul ${hours}:${minutes}`;
+    const renderStatusBadge = (status) => {
+        const colors = {
+            pending: 'bg-yellow-100 text-yellow-700',
+            active: 'bg-blue-100 text-blue-700',
+            finish: 'bg-green-100 text-green-700',
+        };
+        
+        return (
+            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${colors[status] || 'bg-slate-100 text-slate-700'}`}>
+                {status || '-'}
+            </span>
+        );
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-6xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
                 
-                {/* Modal Header */}
-                <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                {/* Header Modal */}
+                <div className="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-700 text-white flex items-center justify-between">
                     <div>
-                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                            DETAIL TARGET R&D
-                        </span>
-                        <h3 className="text-base font-mono font-bold text-blue-900">
-                            {data.kode_batch || '-'}
-                        </h3>
+                        <h3 className="text-lg font-bold">Detail Rincian Target Batch</h3>
+                        <p className="text-xs text-slate-300 mt-1">
+                            Kode Batch: <span className="font-mono font-bold text-blue-300">{batchData.kode_batch}</span> 
+                            {' '} | Tanggal: <span className="font-semibold">{formatDateToDMY(batchData.tanggal)}</span>
+                            {' '} | Status: {renderStatusBadge(batchData.status)}
+                        </p>
                     </div>
                     <button
-                        type="button"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition"
+                        className="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-slate-600 transition-colors"
+                        title="Tutup"
                     >
-                        <X size={18} />
+                        <X size={20} />
                     </button>
                 </div>
 
-                {/* Modal Body */}
-                <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                    
-                    {/* Ringkasan Status & Batch Info */}
-                    <div className="grid grid-cols-2 gap-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100/80">
-                        <div>
-                            <span className="text-[10px] font-medium text-slate-500 uppercase block">
-                                Tanggal Dibuat
-                            </span>
-                            <span className="text-xs font-semibold text-slate-700">
-                                {formatCreatedDateTime(data.created_at || data.tanggal_dibuat)}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-medium text-slate-500 uppercase block">
-                                Status Target
-                            </span>
-                            <span className="inline-block mt-0.5 text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                                {data.status || 'Pending'}
-                            </span>
-                        </div>
+                {/* Summary Stats */}
+                <div className="bg-slate-50 border-b border-slate-200 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-white rounded-lg p-2 border border-slate-200">
+                        <p className="text-slate-500 font-semibold">Jumlah Aturan</p>
+                        <p className="text-lg font-bold text-slate-900">{batchData.jumlah_aturan || 0}</p>
                     </div>
+                    <div className="bg-white rounded-lg p-2 border border-slate-200">
+                        <p className="text-slate-500 font-semibold">Jenis TBK</p>
+                        <p className="text-lg font-bold text-slate-900">{batchData.jumlah_jenis_tbk || 0}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-slate-200">
+                        <p className="text-slate-500 font-semibold">Total Item</p>
+                        <p className="text-lg font-bold text-slate-900">{batchData.items?.length || 0}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-slate-200">
+                        <p className="text-slate-500 font-semibold">Total Bal</p>
+                        <p className="text-lg font-bold text-emerald-600">{batchData.jumlah_bal || 0}</p>
+                    </div>
+                </div>
 
-                    {/* Rincian Spesifikasi Tembakau */}
-                    <div className="space-y-3">
-                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-1">
-                            Spesifikasi & Formula
-                        </h4>
-
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Nomor Aturan</span>
-                                <span className="font-semibold text-slate-800">{data.nomor_aturan || '-'}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Tgl Target Kerja</span>
-                                <span className="font-semibold text-slate-800">{formatDateToDMY(data.tanggal)}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Jenis TBK</span>
-                                <span className="font-bold uppercase text-slate-800">{data.jenis_tbk || '-'}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Tahun Panen/Produksi</span>
-                                <span className="font-semibold text-slate-800">{data.tahun || '-'}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Grade</span>
-                                <span className="font-bold text-slate-800">{data.grade || '-'}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">S.K</span>
-                                <span className="font-semibold text-slate-800">{data.s_k || '-'}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Type</span>
-                                <span className="font-bold uppercase text-slate-800">{data.type || '-'}</span>
-                            </div>
-
-                            <div>
-                                <span className="text-slate-400 block text-[11px]">Jumlah Bal</span>
-                                <span className="font-mono font-bold text-slate-900">{data.jumlah_bal ?? 0} Bal</span>
-                            </div>
-
-                            <div className="col-span-2 bg-slate-50 p-2.5 rounded border border-slate-100">
-                                <span className="text-slate-400 block text-[11px]">Nilai Tara (Kg)</span>
-                                <span className="font-mono font-bold text-slate-800 text-sm">
-                                    {Number(data.tara ?? 0).toFixed(3)} Kg
-                                </span>
-                            </div>
+                {/* Body - Detail Table */}
+                <div className="p-6 overflow-y-auto flex-1">
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left text-slate-700">
+                                <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 sticky top-0">
+                                    <tr>
+                                        <th className="px-3 py-2.5 text-center w-12">No</th>
+                                        <th className="px-3 py-2.5">Nomor Aturan</th>
+                                        <th className="px-3 py-2.5">Jenis TBK</th>
+                                        <th className="px-3 py-2.5 w-16">Tahun</th>
+                                        <th className="px-3 py-2.5 w-16">Grade</th>
+                                        <th className="px-3 py-2.5 w-12">S/K</th>
+                                        <th className="px-3 py-2.5 w-20">Type</th>
+                                        <th className="px-3 py-2.5 text-right w-20">Jumlah Bal</th>
+                                        <th className="px-3 py-2.5 text-right w-20">Tara (kg)</th>
+                                        <th className="px-3 py-2.5 text-center w-20">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200">
+                                    {batchData.items && batchData.items.length > 0 ? (
+                                        batchData.items.map((item, idx) => (
+                                            <tr key={item.id || idx} className="hover:bg-blue-50/50 transition-colors">
+                                                <td className="px-3 py-2.5 text-center text-slate-500 font-semibold">
+                                                    {idx + 1}
+                                                </td>
+                                                <td className="px-3 py-2.5 font-bold text-blue-900">
+                                                    {item.nomor_aturan || '-'}
+                                                </td>
+                                                <td className="px-3 py-2.5">
+                                                    {item.jenis_tbk || '-'}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-center font-medium">
+                                                    {item.tahun || '-'}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-center">
+                                                    <span className="px-2 py-0.5 bg-slate-200 text-slate-800 rounded font-mono font-semibold">
+                                                        {item.grade || '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-2.5 text-center font-medium">
+                                                    {item.s_k || '-'}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-center">
+                                                    <span className={`px-2 py-0.5 rounded font-semibold text-white capitalize ${
+                                                        item.type === 'krosok' ? 'bg-purple-600' : 'bg-orange-600'
+                                                    }`}>
+                                                        {item.type || '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-2.5 text-right font-bold text-slate-900">
+                                                    {item.jumlah_bal || 0}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-right font-mono text-slate-600">
+                                                    {parseFloat(item.tara || 0).toFixed(3)}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-center">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onEditItem?.(item)}
+                                                            className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded transition"
+                                                            title="Edit Item"
+                                                        >
+                                                            <Edit size={14} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteItem(item.id)}
+                                                            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded transition"
+                                                            title="Hapus Item"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="10" className="px-3 py-6 text-center text-slate-400">
+                                                Tidak ada rincian item pada batch ini.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                {/* Modal Footer */}
-                <div className="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-end">
+                {/* Footer Modal */}
+                <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
                     <button
-                        type="button"
                         onClick={onClose}
-                        className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg transition"
+                        className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
                     >
                         Tutup
                     </button>

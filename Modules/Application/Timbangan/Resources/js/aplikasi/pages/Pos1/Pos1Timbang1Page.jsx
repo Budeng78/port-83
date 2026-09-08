@@ -1,5 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, {
+    useEffect,
+    useRef,
+    useState,
+    useCallback,
+} from 'react';
+
 import mqtt from 'mqtt';
+
 import {
     getTargetAktif,
     getLiveData,
@@ -7,656 +14,1491 @@ import {
     commitFinal,
     clearCacheByTarget,
     storeStream,
-    updateTargetStatus
+    updateTargetStatus,
 } from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/Pos1Timbang1Service.js';
 
+import targetService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/targetService.js';
+
+
 const MQTT_URL = 'ws://192.168.1.102:9001';
+
 const MQTT_TOPIC = '/timbangan/data';
+
 const MQTT_OPTIONS = {
     username: 'tes',
     password: 'tes123',
     reconnectPeriod: 2000,
 };
 
+
 export default function Pos1Timbang1Page() {
 
     // =========================================================
-    // DOKUMEN / TARGET STATE & REF
+    // TARGET / DETAIL STATE & REF
     // =========================================================
+
     const targetIdRef = useRef(null);
+
     const currentIndexRef = useRef(1);
-    const targetListRef = useRef([]); // Ref untuk menghindari stale closure pada polling
+
+    const targetListRef = useRef([]);
+
+    const [targetList, setTargetList] = useState([]);
+
+    const [selectedTargetId, setSelectedTargetId] = useState('');
+
+    const [detailList, setDetailList] = useState([]);
+
+    const [selectedDetailId, setSelectedDetailId] = useState('');
+
 
     // =========================================================
     // LOG & POLLING REF
     // =========================================================
+
     const logBoxRef = useRef(null);
+
     const gridPollingRef = useRef(null);
+
     const isFetchingRef = useRef(false);
+
     const mqttClientRef = useRef(null);
+
 
     // =========================================================
     // UI & CONNECTION STATE
     // =========================================================
+
     const [isConnected, setIsConnected] = useState(false);
+
     const [weightDisplay, setWeightDisplay] = useState('0.00');
+
     const [timeDisplay, setTimeDisplay] = useState('-');
-    const [logs, setLogs] = useState(['[Sistem] Menunggu data dari Pos 1 Timbang 1...']);
 
-    // Form / Target Active List State
-    const [targetList, setTargetList] = useState([]);
-    const [selectedTargetId, setSelectedTargetId] = useState('');
+    const [logs, setLogs] = useState([
+        '[Sistem] Menunggu data dari Pos 1 Timbang 1...',
+    ]);
 
-    // Pack Grid State
+
+    // =========================================================
+    // PACK GRID STATE
+    // =========================================================
+
     const [currentIndex, setCurrentIndex] = useState(1);
+
     const [totalBoxes, setTotalBoxes] = useState(5);
+
     const [packValues, setPackValues] = useState({});
+
     const [isFinished, setIsFinished] = useState(false);
 
-    // Synchronize targetList state ke targetListRef
+
+    // =========================================================
+    // SYNCHRONIZE TARGET REF
+    // =========================================================
+
     useEffect(() => {
         targetListRef.current = targetList;
     }, [targetList]);
 
+
     // =========================================================
-    // HELPER FUNCTIONS
+    // HELPER
     // =========================================================
+
     const addLog = useCallback((text) => {
-        const time = new Date().toLocaleTimeString('id-ID', { hour12: false });
-        setLogs((prev) => [...prev, `[${time}] ${text}`]);
+        const time = new Date().toLocaleTimeString(
+            'id-ID',
+            {
+                hour12: false,
+            }
+        );
+
+        setLogs((prev) => [
+            ...prev,
+            `[${time}] ${text}`,
+        ]);
     }, []);
+
 
     const setNextPack = useCallback((next) => {
         const value = Number(next) || 1;
+
         currentIndexRef.current = value;
+
         setCurrentIndex(value);
     }, []);
 
-    // Auto scroll console log
+
+    // =========================================================
+    // AUTO SCROLL LOG
+    // =========================================================
+
     useEffect(() => {
         if (logBoxRef.current) {
-            logBoxRef.current.scrollTop = logBoxRef.current.scrollHeight;
+            logBoxRef.current.scrollTop =
+                logBoxRef.current.scrollHeight;
         }
     }, [logs]);
+
+
+    // =========================================================
+    // GET TARGET AKTIF
+    // =========================================================
 
     const fetchTargetAktif = useCallback(async () => {
         try {
             const res = await getTargetAktif();
+
             if (res.data?.success) {
                 const data = res.data.data || [];
+
                 setTargetList(data);
+
                 targetListRef.current = data;
             }
         } catch (err) {
-            addLog('Gagal mengambil daftar target aktif.');
+            addLog(
+                'Gagal mengambil daftar target aktif.'
+            );
         }
     }, [addLog]);
 
-    // Load Target Aktif saat komponen mount
+
+    // =========================================================
+    // LOAD TARGET SAAT MOUNT
+    // =========================================================
+
     useEffect(() => {
         fetchTargetAktif();
     }, [fetchTargetAktif]);
 
+
+    // =========================================================
+    // PILIH TARGET → LOAD DETAIL
+    // =========================================================
+
+    const handleSelectTarget = async (newTargetId) => {
+
+        setSelectedTargetId(newTargetId);
+
+        setSelectedDetailId('');
+
+        setDetailList([]);
+
+        if (!newTargetId) {
+            return;
+        }
+
+        try {
+
+            const res = await targetService.getById(
+                newTargetId
+            );
+
+            const aturan =
+                res.data?.data?.aturan ?? [];
+
+            const details = aturan.flatMap(
+                (item) => item.detail ?? []
+            );
+
+            setDetailList(details);
+
+            addLog(
+                `${details.length} detail ditemukan pada target.`
+            );
+
+        } catch (err) {
+
+            console.error(
+                'Gagal mengambil detail target:',
+                err
+            );
+
+            addLog(
+                'Gagal mengambil detail target.'
+            );
+        }
+    };
+
+
     // =========================================================
     // MQTT — LIVE WEIGHT
     // =========================================================
+
     const disconnectMqtt = useCallback(() => {
+
         if (mqttClientRef.current) {
+
             mqttClientRef.current.removeAllListeners();
+
             mqttClientRef.current.end(true);
+
             mqttClientRef.current = null;
         }
+
         setIsConnected(false);
+
     }, []);
 
+
     const connectMqtt = useCallback(() => {
-        if (mqttClientRef.current) return;
 
-        addLog('Menghubungkan ke MQTT broker...');
+        if (mqttClientRef.current) {
+            return;
+        }
 
-        const client = mqtt.connect(MQTT_URL, MQTT_OPTIONS);
+        addLog(
+            'Menghubungkan ke MQTT broker...'
+        );
+
+        const client = mqtt.connect(
+            MQTT_URL,
+            MQTT_OPTIONS
+        );
+
 
         client.on('connect', () => {
+
             setIsConnected(true);
-            addLog('Terhubung ke MQTT broker.');
 
-            client.subscribe(MQTT_TOPIC, (err) => {
-                if (err) {
-                    addLog(`Gagal subscribe topic ${MQTT_TOPIC}.`);
+            addLog(
+                'Terhubung ke MQTT broker.'
+            );
+
+            client.subscribe(
+                MQTT_TOPIC,
+                (err) => {
+
+                    if (err) {
+                        addLog(
+                            `Gagal subscribe topic ${MQTT_TOPIC}.`
+                        );
+                    }
                 }
-            });
+            );
         });
 
-        client.on('message', (topic, payload) => {
-            if (topic !== MQTT_TOPIC) return;
 
-            try {
-                const data = JSON.parse(payload.toString());
+        client.on(
+            'message',
+            (topic, payload) => {
 
-                if (data?.value !== undefined) {
-                    setWeightDisplay(Number(data.value).toFixed(2));
-                    setTimeDisplay(data.time || new Date().toLocaleTimeString('id-ID', { hour12: false }));
+                if (topic !== MQTT_TOPIC) {
+                    return;
                 }
-            } catch (err) {
-                addLog('Payload MQTT tidak valid / gagal di-parse.');
+
+                try {
+
+                    const data = JSON.parse(
+                        payload.toString()
+                    );
+
+                    if (
+                        data?.value !== undefined
+                    ) {
+
+                        setWeightDisplay(
+                            Number(data.value)
+                                .toFixed(2)
+                        );
+
+                        setTimeDisplay(
+                            data.time ||
+                            new Date()
+                                .toLocaleTimeString(
+                                    'id-ID',
+                                    {
+                                        hour12: false,
+                                    }
+                                )
+                        );
+                    }
+
+                } catch (err) {
+
+                    addLog(
+                        'Payload MQTT tidak valid / gagal di-parse.'
+                    );
+                }
             }
-        });
+        );
+
 
         client.on('error', (err) => {
-            addLog(`MQTT error: ${err?.message || err}`);
+
+            addLog(
+                `MQTT error: ${err?.message || err}`
+            );
         });
 
+
         client.on('close', () => {
+
             setIsConnected(false);
         });
 
+
         mqttClientRef.current = client;
+
     }, [addLog]);
 
-    // Stop semua pemantauan (MQTT + polling grid)
+
+    // =========================================================
+    // DISCONNECT TIMBANGAN
+    // =========================================================
+
     const disconnectTimbangan = useCallback(() => {
+
         disconnectMqtt();
 
         if (gridPollingRef.current) {
-            clearInterval(gridPollingRef.current);
+
+            clearInterval(
+                gridPollingRef.current
+            );
+
             gridPollingRef.current = null;
         }
 
-        addLog('Pemantauan data timbang dihentikan.');
-    }, [disconnectMqtt, addLog]);
+        addLog(
+            'Pemantauan data timbang dihentikan.'
+        );
+
+    }, [
+        disconnectMqtt,
+        addLog,
+    ]);
+
 
     // =========================================================
-    // POLLING GRID STAGING (cache_data) — REST API
+    // POLLING GRID STAGING
     // =========================================================
+
     const ambilLiveData = useCallback(async () => {
-        const activeTargetId = targetIdRef.current;
-        if (!activeTargetId || isFetchingRef.current) return;
+
+        const activeTargetId =
+            targetIdRef.current;
+
+        if (
+            !activeTargetId ||
+            isFetchingRef.current
+        ) {
+            return;
+        }
 
         try {
+
             isFetchingRef.current = true;
-            const res = await getLiveData(activeTargetId);
-            if (!res.data?.success) return;
 
-            const { cache_data, active_cache, next_nomor_bal } = res.data;
+            const res = await getLiveData(
+                activeTargetId
+            );
 
-            // Map data cache ke tampilan grid pack
+            if (!res.data?.success) {
+                return;
+            }
+
+            const {
+                cache_data,
+                active_cache,
+                next_nomor_bal,
+            } = res.data;
+
+
             const values = {};
-            if (Array.isArray(cache_data) && cache_data.length > 0) {
+
+            if (
+                Array.isArray(cache_data) &&
+                cache_data.length > 0
+            ) {
+
                 cache_data.forEach((item) => {
-                    const noBal = Number(item.nomor_bal);
-                    const berat = Number(item.berat_kotor);
-                    if (Number.isFinite(noBal) && Number.isFinite(berat)) {
-                        values[noBal] = berat.toFixed(2);
+
+                    const noBal =
+                        Number(item.nomor_bal);
+
+                    const berat =
+                        Number(item.berat_kotor);
+
+                    if (
+                        Number.isFinite(noBal) &&
+                        Number.isFinite(berat)
+                    ) {
+
+                        values[noBal] =
+                            berat.toFixed(2);
                     }
                 });
             }
 
-            const totalTerisi = Object.keys(values).length;
-            const currentTarget = targetListRef.current.find((item) => String(item.id) === String(activeTargetId));
-            const targetBal = Number(currentTarget?.jumlah_bal) || 0;
 
-            // Logika Notifikasi
+            const totalTerisi =
+                Object.keys(values).length;
+
+
+            const currentTarget =
+                targetListRef.current.find(
+                    (item) =>
+                        String(item.id) ===
+                        String(activeTargetId)
+                );
+
+
+            const targetBal =
+                Number(
+                    currentTarget?.jumlah_bal
+                ) || 0;
+
+
             if (targetBal > 0) {
-                if (next_nomor_bal > targetBal) {
-                    addLog(`⚠️ PERINGATAN: Input timbang (${next_nomor_bal - 1} bal) MELEBIHI target kerja (${targetBal} bal)!`);
-                } else if (totalTerisi === targetBal) {
-                    addLog(`✅ INFORMASI: Jumlah bal yang ditimbang sudah PAS dengan target (${targetBal} bal).`);
+
+                if (
+                    next_nomor_bal >
+                    targetBal
+                ) {
+
+                    addLog(
+                        `⚠️ PERINGATAN: Input timbang (${next_nomor_bal - 1} bal) MELEBIHI target kerja (${targetBal} bal)!`
+                    );
+
+                } else if (
+                    totalTerisi === targetBal
+                ) {
+
+                    addLog(
+                        `✅ INFORMASI: Jumlah bal yang ditimbang sudah PAS dengan target (${targetBal} bal).`
+                    );
                 }
             }
 
+
             setPackValues((prev) => {
-                const isSame = JSON.stringify(prev) === JSON.stringify(values);
-                return isSame ? prev : values;
+
+                const isSame =
+                    JSON.stringify(prev) ===
+                    JSON.stringify(values);
+
+                return isSame
+                    ? prev
+                    : values;
             });
 
+
             if (active_cache) {
-                setWeightDisplay(Number(active_cache.berat_kotor).toFixed(2));
+
+                setWeightDisplay(
+                    Number(
+                        active_cache.berat_kotor
+                    ).toFixed(2)
+                );
+
                 setTimeDisplay(
-                    new Date(active_cache.updated_at).toLocaleTimeString('id-ID', { hour12: false })
+                    new Date(
+                        active_cache.updated_at
+                    ).toLocaleTimeString(
+                        'id-ID',
+                        {
+                            hour12: false,
+                        }
+                    )
                 );
             }
 
+
             if (next_nomor_bal) {
-                setNextPack(next_nomor_bal);
-                setTotalBoxes((prev) => Math.max(5, Math.ceil(next_nomor_bal / 5) * 5));
+
+                setNextPack(
+                    next_nomor_bal
+                );
+
+                setTotalBoxes((prev) =>
+                    Math.max(
+                        5,
+                        Math.ceil(
+                            next_nomor_bal / 5
+                        ) * 5
+                    )
+                );
             }
+
         } catch (err) {
-            addLog('Gagal menyinkronkan data live dari server.');
+
+            addLog(
+                'Gagal menyinkronkan data live dari server.'
+            );
+
         } finally {
+
             isFetchingRef.current = false;
         }
-    }, [addLog, setNextPack]);
+
+    }, [
+        addLog,
+        setNextPack,
+    ]);
+
 
     // =========================================================
-    // TOGGLE MONITORING / CONNECT
+    // CONNECT / STOP
     // =========================================================
+
     const handleConnect = () => {
+
         if (isConnected) {
+
             disconnectTimbangan();
+
             return;
         }
+
 
         if (!selectedTargetId) {
-            alert('Pilih Target Kerja terlebih dahulu!');
+
+            alert(
+                'Pilih Target Kerja terlebih dahulu!'
+            );
+
             return;
         }
 
-        targetIdRef.current = selectedTargetId;
+
+        if (!selectedDetailId) {
+
+            alert(
+                'Pilih Detail Timbangan terlebih dahulu!'
+            );
+
+            return;
+        }
+
+
+        targetIdRef.current =
+            selectedTargetId;
+
+
         connectMqtt();
-        addLog('Memulai pemantauan live data Pos 1 Timbang 1 (MQTT)...');
+
+        addLog(
+            'Memulai pemantauan live data Pos 1 Timbang 1 (MQTT)...'
+        );
+
 
         ambilLiveData();
-        if (gridPollingRef.current) clearInterval(gridPollingRef.current);
-        gridPollingRef.current = setInterval(ambilLiveData, 5000);
+
+
+        if (gridPollingRef.current) {
+
+            clearInterval(
+                gridPollingRef.current
+            );
+        }
+
+
+        gridPollingRef.current =
+            setInterval(
+                ambilLiveData,
+                5000
+            );
     };
 
-    // =========================================================
-    // AKSI SIMPAN BAL (V)
-    // =========================================================
-    const handleSavePack = async (nomor, berat) => {
-        const activeTargetId = targetIdRef.current;
-        if (!activeTargetId) return;
 
-        if (!berat || Number(berat) <= 0) {
-            alert(`Nilai bal nomor ${nomor} tidak valid!`);
+    // =========================================================
+    // SIMPAN BAL
+    // =========================================================
+
+    const handleSavePack = async (
+        nomor,
+        berat
+    ) => {
+
+        const activeTargetId =
+            targetIdRef.current;
+
+        if (!activeTargetId) {
             return;
         }
 
+
+        if (
+            !berat ||
+            Number(berat) <= 0
+        ) {
+
+            alert(
+                `Nilai bal nomor ${nomor} tidak valid!`
+            );
+
+            return;
+        }
+
+
         try {
-            addLog(`Mengonfirmasi/menyimpan bal nomor ${nomor} (${berat} KG)...`);
+
+            addLog(
+                `Mengonfirmasi/menyimpan bal nomor ${nomor} (${berat} KG)...`
+            );
+
 
             const res = await storeStream({
-                target_id: activeTargetId,
-                nomor_bal: nomor,
-                berat_kotor: berat,
+
+                target_id:
+                    activeTargetId,
+
+                nomor_bal:
+                    nomor,
+
+                berat_kotor:
+                    berat,
             });
 
+
             if (res.data?.success) {
-                addLog(`Bal No. ${nomor} berhasil dikonfirmasi.`);
+
+                addLog(
+                    `Bal No. ${nomor} berhasil dikonfirmasi.`
+                );
+
                 ambilLiveData();
             }
+
         } catch (err) {
-            addLog(err.response?.data?.message || `Gagal menyimpan data bal ${nomor}.`);
+
+            addLog(
+                err.response?.data?.message ||
+                `Gagal menyimpan data bal ${nomor}.`
+            );
         }
     };
 
-    // =========================================================
-    // AKSI HAPUS BAL (X)
-    // =========================================================
-    const handleDeletePack = async (nomor) => {
-        const activeTargetId = targetIdRef.current;
-        if (!activeTargetId) return;
 
-        if (!window.confirm(`Hapus data bal nomor ${nomor} dari staging?`)) return;
+    // =========================================================
+    // HAPUS BAL
+    // =========================================================
+
+    const handleDeletePack = async (
+        nomor
+    ) => {
+
+        const activeTargetId =
+            targetIdRef.current;
+
+        if (!activeTargetId) {
+            return;
+        }
+
+
+        if (
+            !window.confirm(
+                `Hapus data bal nomor ${nomor} dari staging?`
+            )
+        ) {
+            return;
+        }
+
 
         try {
+
             isFetchingRef.current = true;
-            const res = await getLiveData(activeTargetId);
-            const cacheItems = res.data?.cache_data || [];
-            const targetCache = cacheItems.find((item) => Number(item.nomor_bal) === nomor);
+
+            const res =
+                await getLiveData(
+                    activeTargetId
+                );
+
+            const cacheItems =
+                res.data?.cache_data || [];
+
+
+            const targetCache =
+                cacheItems.find(
+                    (item) =>
+                        Number(item.nomor_bal) ===
+                        nomor
+                );
+
 
             if (!targetCache) {
-                addLog(`Item bal ${nomor} tidak ditemukan di staging.`);
+
+                addLog(
+                    `Item bal ${nomor} tidak ditemukan di staging.`
+                );
+
                 return;
             }
 
-            const delRes = await deleteCache(targetCache.id);
+
+            const delRes =
+                await deleteCache(
+                    targetCache.id
+                );
+
+
             if (delRes.data?.success) {
-                addLog(`Bal No. ${nomor} berhasil dihapus dari staging.`);
+
+                addLog(
+                    `Bal No. ${nomor} berhasil dihapus dari staging.`
+                );
             }
+
         } catch (err) {
-            addLog(`Gagal menghapus bal ${nomor}.`);
+
+            addLog(
+                `Gagal menghapus bal ${nomor}.`
+            );
+
         } finally {
+
             isFetchingRef.current = false;
+
             ambilLiveData();
         }
     };
 
+
     // =========================================================
-    // CANCEL / RESET SESSION + CLEAR CACHE SERVER
+    // RESET UI
     // =========================================================
+
+    const resetUI = () => {
+
+        disconnectTimbangan();
+
+        targetIdRef.current = null;
+
+        setSelectedTargetId('');
+
+        setSelectedDetailId('');
+
+        setDetailList([]);
+
+        setPackValues({});
+
+        setWeightDisplay('0.00');
+
+        setTimeDisplay('-');
+
+        setNextPack(1);
+
+        setTotalBoxes(5);
+
+        setIsFinished(false);
+
+        addLog(
+            'Sesi penimbangan dibatalkan dan form di-reset.'
+        );
+    };
+
+
+    // =========================================================
+    // CANCEL
+    // =========================================================
+
     const handleCancel = async () => {
-        const activeTargetId = targetIdRef.current;
+
+        const activeTargetId =
+            targetIdRef.current;
+
 
         if (!activeTargetId) {
+
             resetUI();
+
             return;
         }
 
-        const confirmCancel = window.confirm(
-            'Apakah Anda yakin ingin membatalkan? Seluruh data staging/cache untuk target ini di server akan DIHAPUS!'
-        );
-        if (!confirmCancel) return;
+
+        const confirmCancel =
+            window.confirm(
+                'Apakah Anda yakin ingin membatalkan? Seluruh data staging/cache untuk target ini di server akan DIHAPUS!'
+            );
+
+
+        if (!confirmCancel) {
+            return;
+        }
+
 
         try {
-            addLog(`Membersihkan cache server untuk Target ID: ${activeTargetId}...`);
 
-            const res = await clearCacheByTarget(activeTargetId);
-            const responseData = res.data || res;
+            addLog(
+                `Membersihkan cache server untuk Target ID: ${activeTargetId}...`
+            );
+
+
+            const res =
+                await clearCacheByTarget(
+                    activeTargetId
+                );
+
+
+            const responseData =
+                res.data || res;
+
 
             if (responseData.success) {
-                addLog(responseData.message || 'Cache server berhasil dibersihkan.');
 
-                // Kembalikan status target ke pending
+                addLog(
+                    responseData.message ||
+                    'Cache server berhasil dibersihkan.'
+                );
+
+
                 try {
-                    await updateTargetStatus(activeTargetId, 'pending');
+
+                    await updateTargetStatus(
+                        activeTargetId,
+                        'pending'
+                    );
+
                 } catch (err) {
-                    addLog('Gagal mengembalikan status target ke pending.');
+
+                    addLog(
+                        'Gagal mengembalikan status target ke pending.'
+                    );
                 }
 
+
                 resetUI();
+
                 fetchTargetAktif();
+
             } else {
-                addLog(`Gagal: ${responseData.message || 'Gagal membersihkan cache.'}`);
+
+                addLog(
+                    `Gagal: ${responseData.message || 'Gagal membersihkan cache.'}`
+                );
             }
+
         } catch (err) {
-            console.error('Error clear cache:', err);
-            addLog(`Gagal menghapus cache di server: ${err.response?.data?.message || err.message}`);
+
+            console.error(
+                'Error clear cache:',
+                err
+            );
+
+            addLog(
+                `Gagal menghapus cache di server: ${err.response?.data?.message || err.message}`
+            );
         }
     };
 
-const resetUI = () => {
-    disconnectTimbangan();
-    targetIdRef.current = null;
-    setSelectedTargetId('');
-    setPackValues({});
-    setWeightDisplay('0.00');
-    setTimeDisplay('-');
-    setNextPack(1);
-    setTotalBoxes(5);
-    setIsFinished(false);
-    addLog('Sesi penimbangan dibatalkan dan form di-reset.');
-};
 
     // =========================================================
-    // FINISH / COMMIT FINAL
+    // FINISH / COMMIT
     // =========================================================
+
     const handleFinish = async () => {
-        const activeTargetId = targetIdRef.current;
+
+        const activeTargetId =
+            targetIdRef.current;
+
+
         if (!activeTargetId) {
-            alert('Belum ada Target Kerja yang dipilih.');
+
+            alert(
+                'Belum ada Target Kerja yang dipilih.'
+            );
+
             return;
         }
 
-        if (!window.confirm('Simpan permanen seluruh data penimbangan?')) return;
+
+        if (
+            !window.confirm(
+                'Simpan permanen seluruh data penimbangan?'
+            )
+        ) {
+            return;
+        }
+
 
         try {
-            addLog('Memindahkan data cache ke penyimpanan permanen...');
-            const res = await commitFinal(activeTargetId);
+
+            addLog(
+                'Memindahkan data cache ke penyimpanan permanen...'
+            );
+
+
+            const res =
+                await commitFinal(
+                    activeTargetId
+                );
+
 
             if (res.data?.success) {
-                addLog('Seluruh data penimbangan Pos 1 berhasil disimpan secara permanen!');
 
-                // Reset halaman kembali ke kondisi awal (fresh)
+                addLog(
+                    'Seluruh data penimbangan Pos 1 berhasil disimpan secara permanen!'
+                );
+
+
                 disconnectTimbangan();
+
                 targetIdRef.current = null;
+
                 setSelectedTargetId('');
+
+                setSelectedDetailId('');
+
+                setDetailList([]);
+
                 setPackValues({});
+
                 setWeightDisplay('0.00');
+
                 setTimeDisplay('-');
+
                 setNextPack(1);
+
                 setTotalBoxes(5);
-                setIsFinished(false); // tidak perlu badge "Selesai", karena form sudah fresh lagi
 
-                fetchTargetAktif(); // refresh dropdown target aktif
+                setIsFinished(false);
+
+                fetchTargetAktif();
             }
+
         } catch (err) {
-            addLog(err.response?.data?.message || 'Gagal melakukan commit final.');
+
+            addLog(
+                err.response?.data?.message ||
+                'Gagal melakukan commit final.'
+            );
         }
     };
-    const handleSelectTarget = async (newTargetId) => {
-        const previousTargetId = selectedTargetId;
 
-        setSelectedTargetId(newTargetId);
-        targetIdRef.current = newTargetId;
 
-        // Kalau ada target sebelumnya yang belum di-commit, kembalikan ke pending dulu
-        if (previousTargetId && previousTargetId !== newTargetId) {
-            try {
-                await updateTargetStatus(previousTargetId, 'pending');
-            } catch (err) {
-                addLog('Gagal mengembalikan status target sebelumnya.');
-            }
-        }
+    // =========================================================
+    // CLEANUP
+    // =========================================================
 
-        if (newTargetId) {
-            try {
-                await updateTargetStatus(newTargetId, 'active');
-                addLog('Target kerja dipilih, status diubah menjadi aktif.');
-                fetchTargetAktif(); // refresh supaya dropdown ikut update badge/status terbaru
-            } catch (err) {
-                addLog('Gagal mengubah status target menjadi aktif.');
-            }
-        }
-    };
-    // Cleanup saat unmount
     useEffect(() => {
+
         return () => {
+
             disconnectMqtt();
-            if (gridPollingRef.current) clearInterval(gridPollingRef.current);
+
+            if (gridPollingRef.current) {
+
+                clearInterval(
+                    gridPollingRef.current
+                );
+            }
         };
+
     }, [disconnectMqtt]);
 
-    // Scroll otomatis ke row aktif
+
+    // =========================================================
+    // SCROLL ROW AKTIF
+    // =========================================================
+
     useEffect(() => {
-        const row = document.getElementById(`row-${currentIndex}`);
+
+        const row =
+            document.getElementById(
+                `row-${currentIndex}`
+            );
+
         if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            row.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+            });
         }
+
     }, [currentIndex]);
+
 
     // =========================================================
     // RENDER PACK GRID
     // =========================================================
+
     const renderSheetGrid = () => {
+
         const groups = [];
 
-        for (let i = 0; i < totalBoxes; i += 5) {
+
+        for (
+            let i = 0;
+            i < totalBoxes;
+            i += 5
+        ) {
+
             const start = i + 1;
 
+
             groups.push(
+
                 <div
                     key={start}
                     className="flex flex-col border border-gray-300 bg-white rounded-lg overflow-hidden w-full sm:w-[calc(50%-0.25rem)] md:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.6rem)] xl:w-[calc(20%-0.65rem)] shadow-sm"
                 >
-                    {[0, 1, 2, 3, 4].map((offset) => {
-                        const nomor = start + offset;
-                        const isSavedInCache = packValues[nomor] !== undefined && packValues[nomor] !== '';
-                        const isActive = nomor === currentIndex;
-                        
-                        const value = isActive && isConnected
-                            ? weightDisplay
-                            : (packValues[nomor] ?? '');
 
-                        const canSave = (isActive || isSavedInCache) && Number(value) > 0;
+                    {[0, 1, 2, 3, 4].map(
+                        (offset) => {
 
-                        return (
-                            <div
-                                key={nomor}
-                                id={`row-${nomor}`}
-                                className={`flex items-center w-full h-10 md:h-11 ${
-                                    offset < 4 ? 'border-b border-gray-300' : ''
-                                } ${isActive ? 'bg-blue-100/80 ring-2 ring-blue-500 ring-inset z-10' : 'bg-white'}`}
-                            >
-                                {/* Nomor Bal */}
-                                <div className={`w-9 sm:w-10 md:w-11 h-full flex-shrink-0 border-r border-gray-300 flex items-center justify-center text-xs md:text-sm font-bold ${
-                                    isActive ? 'bg-blue-200 text-blue-800' : 'bg-gray-50 text-gray-600'
-                                }`}>
-                                    {nomor}
-                                </div>
+                            const nomor =
+                                start + offset;
 
-                                {/* Nilai Berat */}
-                                <div className="flex-1 min-w-0 h-full px-2 flex items-center">
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value={value}
-                                        className="w-full h-full bg-transparent border-none outline-none text-right font-bold text-sm md:text-base text-blue-700"
-                                    />
-                                </div>
 
-                                {/* GROUP ICON AKSI */}
-                                <div className="flex h-full flex-shrink-0 border-l border-gray-200">
+                            const isSavedInCache =
+                                packValues[nomor] !==
+                                    undefined &&
+                                packValues[nomor] !==
+                                    '';
 
-                                    {/* ICON X (HAPUS STAGING) */}
-                                    <button
-                                        type="button"
-                                        disabled={!isSavedInCache || isFinished}
-                                        onClick={() => isSavedInCache && handleDeletePack(nomor)}
-                                        className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center border-r border-gray-200 transition-colors ${
-                                            isSavedInCache && !isFinished
-                                                ? 'text-red-600 hover:bg-red-100 hover:text-red-800 active:bg-red-200'
-                                                : 'text-gray-300 cursor-not-allowed'
+
+                            const isActive =
+                                nomor ===
+                                currentIndex;
+
+
+                            const value =
+                                isActive &&
+                                isConnected
+                                    ? weightDisplay
+                                    : (
+                                        packValues[
+                                            nomor
+                                        ] ?? ''
+                                    );
+
+
+                            const canSave =
+                                (
+                                    isActive ||
+                                    isSavedInCache
+                                ) &&
+                                Number(value) > 0;
+
+
+                            return (
+
+                                <div
+                                    key={nomor}
+                                    id={`row-${nomor}`}
+                                    className={`flex items-center w-full h-10 md:h-11 ${
+                                        offset < 4
+                                            ? 'border-b border-gray-300'
+                                            : ''
+                                    } ${
+                                        isActive
+                                            ? 'bg-blue-100/80 ring-2 ring-blue-500 ring-inset z-10'
+                                            : 'bg-white'
+                                    }`}
+                                >
+
+                                    {/* NOMOR BAL */}
+
+                                    <div
+                                        className={`w-9 sm:w-10 md:w-11 h-full flex-shrink-0 border-r border-gray-300 flex items-center justify-center text-xs md:text-sm font-bold ${
+                                            isActive
+                                                ? 'bg-blue-200 text-blue-800'
+                                                : 'bg-gray-50 text-gray-600'
                                         }`}
-                                        title={isSavedInCache ? `Hapus bal ${nomor}` : ''}
                                     >
-                                        ✕
-                                    </button>
+                                        {nomor}
+                                    </div>
 
-                                    {/* ICON V (SIMPAN STAGING) */}
-                                    <button
-                                        type="button"
-                                        disabled={!canSave || isFinished}
-                                        onClick={() => canSave && handleSavePack(nomor, value)}
-                                        className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center transition-colors ${
-                                            canSave && !isFinished
-                                                ? 'text-emerald-600 hover:bg-emerald-100 hover:text-emerald-800 active:bg-emerald-200'
-                                                : 'text-gray-300 cursor-not-allowed'
-                                        }`}
-                                        title={canSave ? `Simpan bal ${nomor}` : ''}
-                                    >
-                                        ✓
-                                    </button>
+
+                                    {/* NILAI BERAT */}
+
+                                    <div className="flex-1 min-w-0 h-full px-2 flex items-center">
+
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={value}
+                                            className="w-full h-full bg-transparent border-none outline-none text-right font-bold text-sm md:text-base text-blue-700"
+                                        />
+
+                                    </div>
+
+
+                                    {/* AKSI */}
+
+                                    <div className="flex h-full flex-shrink-0 border-l border-gray-200">
+
+                                        {/* HAPUS */}
+
+                                        <button
+                                            type="button"
+                                            disabled={
+                                                !isSavedInCache ||
+                                                isFinished
+                                            }
+                                            onClick={() =>
+                                                isSavedInCache &&
+                                                handleDeletePack(
+                                                    nomor
+                                                )
+                                            }
+                                            className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center border-r border-gray-200 transition-colors ${
+                                                isSavedInCache &&
+                                                !isFinished
+                                                    ? 'text-red-600 hover:bg-red-100 hover:text-red-800 active:bg-red-200'
+                                                    : 'text-gray-300 cursor-not-allowed'
+                                            }`}
+                                            title={
+                                                isSavedInCache
+                                                    ? `Hapus bal ${nomor}`
+                                                    : ''
+                                            }
+                                        >
+                                            ✕
+                                        </button>
+
+
+                                        {/* SIMPAN */}
+
+                                        <button
+                                            type="button"
+                                            disabled={
+                                                !canSave ||
+                                                isFinished
+                                            }
+                                            onClick={() =>
+                                                canSave &&
+                                                handleSavePack(
+                                                    nomor,
+                                                    value
+                                                )
+                                            }
+                                            className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center transition-colors ${
+                                                canSave &&
+                                                !isFinished
+                                                    ? 'text-emerald-600 hover:bg-emerald-100 hover:text-emerald-800 active:bg-emerald-200'
+                                                    : 'text-gray-300 cursor-not-allowed'
+                                            }`}
+                                            title={
+                                                canSave
+                                                    ? `Simpan bal ${nomor}`
+                                                    : ''
+                                            }
+                                        >
+                                            ✓
+                                        </button>
+
+                                    </div>
 
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        }
+                    )}
+
                 </div>
             );
         }
 
+
         return groups;
     };
 
+
+    // =========================================================
+    // RENDER
+    // =========================================================
+
     return (
+
         <div className="max-w-6xl mx-auto w-full space-y-4 p-4 md:p-6">
 
-            {/* CARD 1: INFORMASI & TIMBANGAN */}
+            {/* =====================================================
+                CARD 1
+            ===================================================== */}
+
             <div className="bg-white p-4 md:p-6 rounded-xl shadow">
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* INFORMASI TARGET */}
+                    {/* INFORMASI */}
+
                     <div className="space-y-3">
+
                         <div className="border-b pb-1">
+
                             <h3 className="font-bold text-gray-700 text-sm">
                                 POS 1 - PENERIMAAN / TIMBANG 1
                             </h3>
+
                         </div>
+
+
+                        {/* TARGET */}
 
                         <div>
+
                             <label className="block text-xs font-semibold text-gray-500 mb-1">
-                                Pilih Target Kerja Aktif
+                                Pilih Target Kerja
                             </label>
+
                             <select
-                                value={selectedTargetId}
-                                onChange={(e) => handleSelectTarget(e.target.value)}
-                                disabled={isConnected || isFinished}
+                                value={
+                                    selectedTargetId
+                                }
+                                onChange={(e) =>
+                                    handleSelectTarget(
+                                        e.target.value
+                                    )
+                                }
+                                disabled={
+                                    isConnected ||
+                                    isFinished
+                                }
                                 className="w-full p-2 text-xs border rounded-lg bg-gray-50 font-medium outline-none focus:border-blue-500 disabled:opacity-60"
                             >
-                                <option value="">-- Pilih Target Kerja --</option>
+
+                                <option value="">
+                                    -- Pilih Target Kerja --
+                                </option>
+
                                 {targetList
-                                    .filter((item) => item.status !== 'finish')
-                                    .map((item) => (
-                                        <option key={item.id} value={item.id}>
-                                            {`${item.tanggal_formatted || '-'} | ${item.jenis_tbk || '-'} | ${item.tahun || '-'} | ${item.s_k || '-'} | ${item.jumlah_bal || 0}`}
-                                        </option>
-                                    ))}
+                                    .filter(
+                                        (item) =>
+                                            item.status !==
+                                            'finish'
+                                    )
+                                    .map(
+                                        (item) => (
+
+                                            <option
+                                                key={item.id}
+                                                value={item.id}
+                                            >
+                                                {`${item.tanggal_formatted || '-'} | ${item.kode_batch || '-'}`}
+                                            </option>
+
+                                        )
+                                    )}
+
                             </select>
+
                         </div>
+
+
+                        {/* DETAIL */}
+
+                        <div>
+
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                Pilih Detail Timbangan
+                            </label>
+
+                            <select
+                                value={
+                                    selectedDetailId
+                                }
+                                onChange={(e) =>
+                                    setSelectedDetailId(
+                                        e.target.value
+                                    )
+                                }
+                                disabled={
+                                    !selectedTargetId ||
+                                    isConnected ||
+                                    isFinished
+                                }
+                                className="w-full p-2 text-xs border rounded-lg bg-gray-50 font-medium outline-none focus:border-blue-500 disabled:opacity-60"
+                            >
+
+                                <option value="">
+                                    -- Pilih Detail --
+                                </option>
+
+                                {detailList.map(
+                                    (detail) => (
+
+                                        <option
+                                            key={detail.id}
+                                            value={detail.id}
+                                        >
+                                            {`${detail.type || '-'} | ${detail.jenis_tbk || '-'} | ${detail.tahun || '-'} | ${detail.grade || '-'} | ${detail.s_k || '-'} | ${detail.jumlah_bal || 0} Bal`}
+                                        </option>
+
+                                    )
+                                )}
+
+                            </select>
+
+                        </div>
+
                     </div>
 
-                    {/* LIVE DISPLAY TIMBANGAN */}
+
+                    {/* LIVE DISPLAY */}
+
                     <div className="bg-blue-50 p-4 rounded-xl text-center flex flex-col justify-between border border-blue-200">
-                        <div className={`text-xs font-bold uppercase ${isConnected ? 'text-green-600' : 'text-gray-400'}`}>
-                            {isConnected ? 'ONLINE' : 'OFFLINE'}
+
+                        <div
+                            className={`text-xs font-bold uppercase ${
+                                isConnected
+                                    ? 'text-green-600'
+                                    : 'text-gray-400'
+                            }`}
+                        >
+                            {isConnected
+                                ? 'ONLINE'
+                                : 'OFFLINE'}
                         </div>
+
 
                         <div className="text-5xl md:text-6xl font-extrabold text-blue-600 my-2">
-                            {weightDisplay} <span className="text-xl font-bold">KG</span>
+
+                            {weightDisplay}
+
+                            <span className="text-xl font-bold">
+                                {' '}KG
+                            </span>
+
                         </div>
+
 
                         <div className="text-xs text-gray-500 mb-3">
-                            Waktu Stream: <span className="font-bold">{timeDisplay}</span>
+
+                            Waktu Stream:
+
+                            <span className="font-bold">
+                                {' '}{timeDisplay}
+                            </span>
+
                         </div>
 
+
                         <div className="flex gap-2">
+
                             <button
                                 type="button"
-                                onClick={handleConnect}
-                                disabled={isFinished}
+                                onClick={
+                                    handleConnect
+                                }
+                                disabled={
+                                    isFinished
+                                }
                                 className={`w-full py-2 text-white rounded-lg font-bold shadow text-xs transition-colors ${
-                                    isConnected ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                                } ${isFinished ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    isConnected
+                                        ? 'bg-red-600 hover:bg-red-700'
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                } ${
+                                    isFinished
+                                        ? 'opacity-50 cursor-not-allowed'
+                                        : ''
+                                }`}
                             >
-                                {isConnected ? 'Stop Pantau' : 'Mulai Pantau'}
+                                {isConnected
+                                    ? 'Stop Pantau'
+                                    : 'Mulai Pantau'}
                             </button>
+
                         </div>
+
                     </div>
 
                 </div>
+
             </div>
 
-            {/* CARD 2: GRID SHEET LEMBAR BAL */}
+
+            {/* =====================================================
+                CARD 2
+            ===================================================== */}
+
             <div className="bg-white p-3 md:p-4 rounded-xl shadow w-full max-w-6xl mx-auto space-y-3">
+
                 <div className="flex justify-between items-center gap-2">
+
                     <div>
-                        <h2 className="font-bold text-gray-700 text-base">Lembar Bal (Pos 1)</h2>
+
+                        <h2 className="font-bold text-gray-700 text-base">
+                            Lembar Bal (Pos 1)
+                        </h2>
+
                         <div className="text-[11px] text-gray-500">
-                            Bal aktif berikutnya: <span className="font-bold text-blue-600">{currentIndex}</span>
+
+                            Bal aktif berikutnya:
+
+                            <span className="font-bold text-blue-600">
+                                {' '}{currentIndex}
+                            </span>
+
                         </div>
+
+
                         {isFinished && (
+
                             <span className="text-xs text-emerald-600 font-semibold">
                                 ✓ Penimbangan Selesai & Committed
                             </span>
+
                         )}
+
                     </div>
 
-                    {/* GROUP TOMBOL AKSI FINAL / CANCEL */}
+
+                    {/* AKSI FINAL */}
+
                     <div className="flex items-center gap-2">
+
                         <button
                             type="button"
-                            onClick={handleCancel}
+                            onClick={
+                                handleCancel
+                            }
                             className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs border border-gray-300 transition-colors"
                         >
                             Batal / Reset
                         </button>
 
+
                         {!isFinished && (
+
                             <button
                                 type="button"
-                                onClick={handleFinish}
+                                onClick={
+                                    handleFinish
+                                }
                                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow transition-colors"
                             >
                                 Commit Final (Selesai)
                             </button>
+
                         )}
+
                     </div>
+
                 </div>
+
 
                 <div className="flex flex-wrap gap-2 md:gap-3 max-h-72 overflow-y-auto p-1 border rounded-lg bg-gray-50/50">
+
                     {renderSheetGrid()}
+
                 </div>
+
             </div>
 
-            {/* CARD 3: CONSOLE LOG */}
+
+            {/* =====================================================
+                CARD 3
+            ===================================================== */}
+
             <div
                 ref={logBoxRef}
                 className="bg-slate-900 text-green-400 p-3 rounded-xl shadow font-mono text-xs h-24 overflow-y-auto max-w-6xl mx-auto w-full"
             >
-                {logs.map((log, idx) => (
-                    <div key={idx}>{log}</div>
-                ))}
+
+                {logs.map(
+                    (log, idx) => (
+
+                        <div key={idx}>
+                            {log}
+                        </div>
+
+                    )
+                )}
+
             </div>
 
         </div>

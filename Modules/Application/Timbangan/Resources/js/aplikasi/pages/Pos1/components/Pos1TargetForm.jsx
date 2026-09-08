@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import pos1TargetService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/pos1TargetService.js';
@@ -34,6 +35,7 @@ export default function Pos1TargetForm({
     const [aturanList, setAturanList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [generatingCode, setGeneratingCode] = useState(false);
+    const [errorMsg, setErrorMsg] = useState(''); // untuk display error detail
 
     const abortControllerRef = useRef(null);
 
@@ -196,6 +198,7 @@ export default function Pos1TargetForm({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrorMsg('');
         setLoading(true);
 
         // Transformasi dari Nested ke Flat Array
@@ -215,26 +218,43 @@ export default function Pos1TargetForm({
             }))
         );
 
+        console.log('📤 Payload yang dikirim:', JSON.stringify(flatItems, null, 2));
+
         try {
             if (isEdit) {
                 await pos1TargetService.update(initialData.id, flatItems[0]);
             } else {
-                // Jika backend menerima batch insert array flat
-                await pos1TargetService.create(flatItems.length === 1 ? flatItems[0] : { items: flatItems });
+                // Kirim sebagai array atau single object tergantung backend
+                const payload = flatItems.length === 1 ? flatItems[0] : { items: flatItems };
+                console.log('📤 Final Payload:', JSON.stringify(payload, null, 2));
+                await pos1TargetService.create(payload);
             }
 
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
+            console.error('❌ Error Response:', error.response);
+            
+            let errorDetail = 'Gagal menyimpan target kerja';
+            
             if (error.response?.status === 422) {
-                console.error('Detail Error Validasi Laravel:', error.response.data.errors);
-            } else {
-                console.error('Gagal menyimpan target kerja:', error);
+                // Validation Error
+                const errors = error.response.data.errors;
+                console.error('📋 Validation Errors:', errors);
+                errorDetail = `Validasi Error: ${Object.values(errors).flat().join(', ')}`;
+            } else if (error.response?.data?.message) {
+                errorDetail = error.response.data.message;
+            } else if (error.response?.status === 500) {
+                errorDetail = 'Server Error 500 - Cek log backend';
             }
+            
+            setErrorMsg(errorDetail);
+            console.error('🔴 Full Error:', error);
         } finally {
             setLoading(false);
         }
     };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs overflow-y-auto">
             <div className="relative w-full max-w-4xl rounded-xl bg-white shadow-2xl border border-slate-200 my-8">
@@ -252,6 +272,15 @@ export default function Pos1TargetForm({
                         <X size={20} />
                     </button>
                 </div>
+
+                {/* Error Alert */}
+                {errorMsg && (
+                    <div className="px-6 pt-4">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-xs">
+                            <strong>❌ Error:</strong> {errorMsg}
+                        </div>
+                    </div>
+                )}
 
                 {/* Form Body */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -363,7 +392,6 @@ export default function Pos1TargetForm({
                                         <tbody className="divide-y divide-slate-100">
                                             {aturan.items.map((item, iIndex) => (
                                                 <tr key={iIndex}>
-                                                    {/* Input String Bebas untuk Jenis Tbk */}
                                                     <td className="p-1">
                                                         <input
                                                             type="text"
@@ -399,7 +427,6 @@ export default function Pos1TargetForm({
                                                             className="w-full rounded border border-slate-300 px-2 py-1 text-xs focus:border-blue-600 focus:outline-none"
                                                         />
                                                     </td>
-                                                    {/* Dropdown Enum untuk Type ('krosok' / 'precut') */}
                                                     <td className="p-1">
                                                         <select
                                                             value={item.type}

@@ -19,7 +19,7 @@ class RndAturanTbkKirimanDetail extends BaseModel
 
     protected $casts = [
         'jumlah_pack' => 'integer',
-        'tara'        => 'decimal:3',
+        'tara'        => 'decimal:2',
     ];
 
     public function kiriman(): BelongsTo

@@ -5,52 +5,46 @@ namespace Modules\Application\Timbangan\Http\Controllers\Pos1;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Modules\Application\Timbangan\Models\Pos1Target;
-use Modules\Application\Timbangan\Models\Pos1Timbang1;
-use Modules\Application\Timbangan\Models\Pos1Timbang1Cache;
 use Illuminate\Support\Str;
+use Modules\Application\Timbangan\Models\Pos1\Pos1Timbang1;
+use Modules\Application\Timbangan\Models\Pos1\Pos1Timbang1Cache;
+use Modules\Application\Timbangan\Models\Pos1\Target;
 
 class Pos1Timbang1Controller extends Controller
 {
     /**
-     * 1. Mengambil daftar target kerja yang sedang aktif
+     * 1. Mengambil daftar target kerja
      */
     public function getTargetAktif()
     {
         try {
-            $targetAktif = Pos1Target::select([
-                'id',
-                'tanggal',
-                'jenis_tbk',
-                'tahun',
-                's_k',
-                'jumlah_bal'
-            ])
-            ->where('status', '!=', 'finish')
-            ->orderBy('tanggal', 'asc') // FIFO: Urutkan dari tanggal terlama ke terbaru
-            ->orderBy('created_at', 'asc') // Urutan sekunder jika tanggalnya sama
-            ->get()
-            ->map(function ($item) {
-                $item->tanggal_formatted = $item->tanggal 
-                    ? $item->tanggal->format('d/m/Y') 
-                    : '-';
-                return $item;
-            });
+            $targetAktif = Target::query()
+                ->where('status', '!=', 'finish')
+                ->orderBy('tanggal', 'asc')
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    $item->tanggal_formatted = $item->tanggal
+                        ? $item->tanggal->format('d/m/Y')
+                        : '-';
+
+                    return $item;
+                });
 
             return response()->json([
                 'success' => true,
-                'data'    => $targetAktif
+                'data'    => $targetAktif,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'error'   => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * 2. Simpan/Update Stream ke Cache Staging
+     * 2. Simpan / Update Stream ke Cache Staging
      */
     public function storeStream(Request $request)
     {
@@ -66,7 +60,7 @@ class Pos1Timbang1Controller extends Controller
                 'nomor_bal' => $validated['nomor_bal'],
             ],
             [
-                'id'          => (string) Str::uuid7(), // Sedia UUID v7 jika aksi berupa INSERT
+                'id'          => (string) Str::uuid7(),
                 'berat_kotor' => $validated['berat_kotor'],
             ]
         );
@@ -74,7 +68,7 @@ class Pos1Timbang1Controller extends Controller
         return response()->json([
             'success' => true,
             'message' => "Bal No. {$cache->nomor_bal} tersimpan di staging cache",
-            'data'    => $cache
+            'data'    => $cache,
         ]);
     }
 
@@ -93,8 +87,11 @@ class Pos1Timbang1Controller extends Controller
             ->orderBy('nomor_bal', 'asc')
             ->get();
 
-        $maxBalInCache = Pos1Timbang1Cache::where('target_id', $targetId)->max('nomor_bal') ?? 0;
-        $maxBalInPerm  = Pos1Timbang1::where('target_id', $targetId)->max('nomor_bal') ?? 0;
+        $maxBalInCache = Pos1Timbang1Cache::where('target_id', $targetId)
+            ->max('nomor_bal') ?? 0;
+
+        $maxBalInPerm = Pos1Timbang1::where('target_id', $targetId)
+            ->max('nomor_bal') ?? 0;
 
         $lastNomorBal = max($maxBalInCache, $maxBalInPerm);
         $nextNomorBal = $lastNomorBal + 1;
@@ -117,11 +114,12 @@ class Pos1Timbang1Controller extends Controller
     public function deleteCache($id)
     {
         $cache = Pos1Timbang1Cache::findOrFail($id);
+
         $cache->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Data bal di staging berhasil dihapus'
+            'message' => 'Data bal di staging berhasil dihapus',
         ]);
     }
 
@@ -137,12 +135,13 @@ class Pos1Timbang1Controller extends Controller
         return DB::transaction(function () use ($request) {
             $targetId = $request->target_id;
 
-            $cacheItems = Pos1Timbang1Cache::where('target_id', $targetId)->get();
+            $cacheItems = Pos1Timbang1Cache::where('target_id', $targetId)
+                ->get();
 
             if ($cacheItems->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak ada data bal di staging cache untuk disimpan!'
+                    'message' => 'Tidak ada data bal di staging cache untuk disimpan!',
                 ], 422);
             }
 
@@ -159,46 +158,55 @@ class Pos1Timbang1Controller extends Controller
                 );
             }
 
-            Pos1Timbang1Cache::where('target_id', $targetId)->delete();
+            Pos1Timbang1Cache::where('target_id', $targetId)
+                ->delete();
 
-            // TAMBAHAN: tandai target sebagai selesai
-            Pos1Target::where('id', $targetId)->update(['status' => 'finish']);
+            Target::where('id', $targetId)
+                ->update([
+                    'status' => 'finish',
+                ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Seluruh data penimbangan berhasil disimpan permanen!'
+                'message' => 'Seluruh data penimbangan berhasil disimpan permanen!',
             ]);
         });
     }
 
+    /**
+     * 6. Bersihkan seluruh cache berdasarkan Target
+     */
     public function clearCacheByTarget($targetId)
     {
         try {
-            // Validasi format UUID target_id agar tidak invalid query
             if (!Str::isUuid($targetId)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Format Target ID tidak valid.'
+                    'message' => 'Format Target ID tidak valid.',
                 ], 400);
             }
 
-            // Hapus menggunakan Eloquent Model langsung
-            $deletedCount = Pos1Timbang1Cache::where('target_id', $targetId)->delete();
+            $deletedCount = Pos1Timbang1Cache::where(
+                'target_id',
+                $targetId
+            )->delete();
 
             return response()->json([
                 'success'       => true,
                 'message'       => "Seluruh cache staging ({$deletedCount} bal) berhasil dibersihkan.",
-                'deleted_count' => $deletedCount
-            ], 200);
-
+                'deleted_count' => $deletedCount,
+            ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus cache: ' . $e->getMessage()
+                'message' => 'Gagal menghapus cache: ' . $e->getMessage(),
             ], 500);
         }
     }
 
+    /**
+     * 7. Update Status Target
+     */
     public function updateStatus(Request $request, $targetId)
     {
         $validated = $request->validate([
@@ -208,26 +216,27 @@ class Pos1Timbang1Controller extends Controller
         if (!Str::isUuid($targetId)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Format Target ID tidak valid.'
+                'message' => 'Format Target ID tidak valid.',
             ], 400);
         }
 
-        $target = Pos1Target::find($targetId);
+        $target = Target::find($targetId);
 
         if (!$target) {
             return response()->json([
                 'success' => false,
-                'message' => 'Target tidak ditemukan.'
+                'message' => 'Target tidak ditemukan.',
             ], 404);
         }
 
-        $target->update(['status' => $validated['status']]);
+        $target->update([
+            'status' => $validated['status'],
+        ]);
 
         return response()->json([
             'success' => true,
             'message' => "Status target berhasil diubah menjadi '{$validated['status']}'.",
-            'data'    => $target
+            'data'    => $target,
         ]);
     }
-
 }

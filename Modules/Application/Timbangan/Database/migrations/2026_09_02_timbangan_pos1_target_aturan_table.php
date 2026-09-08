@@ -8,18 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('timbangan_pos1_target', function (Blueprint $table) {
+        Schema::create('timbangan_pos1_target_aturan', function (Blueprint $table) {
 
             $table->uuid('id')->primary();
 
-            $table->string('kode_batch', 30);
-            $table->date('tanggal');
 
-            $table->enum('status', [
-                'pending',
-                'active',
-                'finish'
-            ])->default('pending');
+            $table->foreignUuid('target_id')
+                ->constrained('timbangan_pos1_target')
+                ->cascadeOnDelete();
+
+
+            $table->string('nomor_aturan', 100);
 
 
             // audit BaseModel
@@ -37,6 +36,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('timbangan_pos1_target');
+        Schema::dropIfExists('timbangan_pos1_target_aturan');
     }
 };
