@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
+import {
+    Scale,
+    RefreshCw,
+    Plus,
+    X,
+    Layers,
+    ChevronRight,
+} from 'lucide-react';
+
 import targetAturanService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/targetAturanService';
 import targetService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/targetService';
 import targetAturanDetailService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/targetAturanDetailService';
@@ -49,10 +58,7 @@ export default function TargetPage() {
 
             setData(response.data.data ?? []);
         } catch (error) {
-            console.error(
-                'Gagal mengambil data target:',
-                error
-            );
+            console.error('Gagal mengambil data target:', error);
         } finally {
             setLoading(false);
         }
@@ -77,10 +83,7 @@ export default function TargetPage() {
             setSaving(true);
 
             if (selected) {
-                await targetService.update(
-                    selected.id,
-                    form
-                );
+                await targetService.update(selected.id, form);
             } else {
                 await targetService.create(form);
             }
@@ -90,21 +93,14 @@ export default function TargetPage() {
 
             await loadData();
         } catch (error) {
-            console.error(
-                'Gagal menyimpan target:',
-                error
-            );
+            console.error('Gagal menyimpan target:', error);
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async (item) => {
-        if (
-            !window.confirm(
-                `Hapus target ${item.kode_batch}?`
-            )
-        ) {
+        if (!window.confirm(`Hapus target ${item.kode_batch}?`)) {
             return;
         }
 
@@ -126,10 +122,7 @@ export default function TargetPage() {
 
             await loadData();
         } catch (error) {
-            console.error(
-                'Gagal menghapus target:',
-                error
-            );
+            console.error('Gagal menghapus target:', error);
         } finally {
             setDeleting(false);
         }
@@ -158,17 +151,11 @@ export default function TargetPage() {
             setAturanDetailFormOpen(false);
             setAturanDetailSelected(null);
 
-            const response =
-                await targetAturanService.getAll(
-                    target.id
-                );
+            const response = await targetAturanService.getAll(target.id);
 
             setAturan(response.data.data ?? []);
         } catch (error) {
-            console.error(
-                'Gagal mengambil data aturan:',
-                error
-            );
+            console.error('Gagal mengambil data aturan:', error);
         } finally {
             setAturanLoading(false);
         }
@@ -189,10 +176,7 @@ export default function TargetPage() {
             setAturanSaving(true);
 
             if (aturanSelected) {
-                await targetAturanService.update(
-                    aturanSelected.id,
-                    form
-                );
+                await targetAturanService.update(aturanSelected.id, form);
             } else {
                 await targetAturanService.create({
                     ...form,
@@ -206,34 +190,23 @@ export default function TargetPage() {
             await loadAturan(targetDetail);
             await loadData();
         } catch (error) {
-            console.error(
-                'Gagal menyimpan aturan:',
-                error
-            );
+            console.error('Gagal menyimpan aturan:', error);
         } finally {
             setAturanSaving(false);
         }
     };
 
     const handleAturanDelete = async (item) => {
-        if (
-            !window.confirm(
-                `Hapus aturan ${item.nomor_aturan}?`
-            )
-        ) {
+        if (!window.confirm(`Hapus aturan ${item.nomor_aturan}?`)) {
             return;
         }
 
         try {
             setAturanDeleting(true);
 
-            await targetAturanService.delete(
-                item.id
-            );
+            await targetAturanService.delete(item.id);
 
-            if (
-                aturanDetailTarget?.id === item.id
-            ) {
+            if (aturanDetailTarget?.id === item.id) {
                 setAturanDetail([]);
                 setAturanDetailTarget(null);
                 setAturanDetailFormOpen(false);
@@ -243,10 +216,7 @@ export default function TargetPage() {
             await loadAturan(targetDetail);
             await loadData();
         } catch (error) {
-            console.error(
-                'Gagal menghapus aturan:',
-                error
-            );
+            console.error('Gagal menghapus aturan:', error);
         } finally {
             setAturanDeleting(false);
         }
@@ -270,19 +240,11 @@ export default function TargetPage() {
             setAturanDetailFormOpen(false);
             setAturanDetailSelected(null);
 
-            const response =
-                await targetAturanDetailService.getAll(
-                    item.id
-                );
+            const response = await targetAturanDetailService.getAll(item.id);
 
-            setAturanDetail(
-                response.data.data ?? []
-            );
+            setAturanDetail(response.data.data ?? []);
         } catch (error) {
-            console.error(
-                'Gagal mengambil detail aturan:',
-                error
-            );
+            console.error('Gagal mengambil detail aturan:', error);
         } finally {
             setAturanDetailLoading(false);
         }
@@ -309,40 +271,27 @@ export default function TargetPage() {
                     form
                 );
             } else {
-                await targetAturanDetailService.create(
-                    aturanDetailTarget.id,
-                    {
-                        ...form,
-                        target_aturan_id:
-                            aturanDetailTarget.id,
-                    }
-                );
+                await targetAturanDetailService.create(aturanDetailTarget.id, {
+                    ...form,
+                    target_aturan_id: aturanDetailTarget.id,
+                });
             }
 
             setAturanDetailFormOpen(false);
             setAturanDetailSelected(null);
 
-            await loadAturanDetail(
-                aturanDetailTarget
-            );
+            await loadAturanDetail(aturanDetailTarget);
 
             await loadAturan(targetDetail);
         } catch (error) {
-            console.error(
-                'Gagal menyimpan detail aturan:',
-                error
-            );
+            console.error('Gagal menyimpan detail aturan:', error);
         } finally {
             setAturanDetailSaving(false);
         }
     };
 
     const handleAturanDetailDelete = async (item) => {
-        if (
-            !window.confirm(
-                `Hapus detail ${item.jenis_tbk}?`
-            )
-        ) {
+        if (!window.confirm(`Hapus detail ${item.jenis_tbk}?`)) {
             return;
         }
 
@@ -354,16 +303,11 @@ export default function TargetPage() {
                 item.id
             );
 
-            await loadAturanDetail(
-                aturanDetailTarget
-            );
+            await loadAturanDetail(aturanDetailTarget);
 
             await loadAturan(targetDetail);
         } catch (error) {
-            console.error(
-                'Gagal menghapus detail aturan:',
-                error
-            );
+            console.error('Gagal menghapus detail aturan:', error);
         } finally {
             setAturanDetailDeleting(false);
         }
@@ -379,44 +323,115 @@ export default function TargetPage() {
     // =====================================================
 
     return (
-        <div className="p-6">
-            <h1 className="mb-4 text-xl font-semibold">
-                Target Timbangan Pos 1
-            </h1>
+        <div className="min-h-full bg-slate-50 p-4 md:p-6">
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
+            <div className="relative mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-amber-400" />
+
+                <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white shadow-sm">
+                            <Scale size={25} strokeWidth={2} />
+                        </div>
+
+                        <div>
+                            <h1 className="text-lg font-semibold text-slate-900 md:text-xl">
+                                Target Timbangan Pos 1
+                            </h1>
+
+                            <p className="text-sm text-slate-500">
+                                Kelola target, aturan, dan detail target
+                                timbangan.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={loadData}
+                            disabled={loading}
+                            title="Refresh"
+                            className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <RefreshCw
+                                size={18}
+                                className={loading ? 'animate-spin' : ''}
+                            />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleCreate}
+                            className="flex h-11 items-center gap-2 rounded-xl bg-blue-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
+                        >
+                            <Plus size={18} />
+                            Tambah Target
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {/* =================================================
                 TARGET
             ================================================= */}
 
-            <button
-                type="button"
-                onClick={handleCreate}
-                className="mb-4 rounded bg-black px-4 py-2 text-white"
-            >
-                Tambah Target
-            </button>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 px-4 py-3 md:px-5">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                                <Layers size={18} />
+                            </div>
 
-            {formOpen && (
-                <div className="mb-4 rounded-lg border bg-white p-4">
-                    <TargetForm
-                        data={selected}
-                        loading={saving}
-                        onSubmit={handleSubmit}
-                        onCancel={handleCancel}
+                            <div>
+                                <h2 className="text-sm font-semibold text-slate-900">
+                                    Daftar Target
+                                </h2>
+
+                                <p className="text-xs text-slate-500">
+                                    Total:{' '}
+                                    <span className="font-semibold text-slate-700">
+                                        {data.length}
+                                    </span>{' '}
+                                    target
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="hidden rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500 sm:block">
+                                Target Timbangan
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {formOpen && (
+                    <div className="border-b border-slate-200 bg-slate-50 p-4 md:p-5">
+                        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <TargetForm
+                                data={selected}
+                                loading={saving}
+                                onSubmit={handleSubmit}
+                                onCancel={handleCancel}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className="overflow-x-auto">
+                    <TargetTable
+                        data={data}
+                        loading={loading || deleting}
+                        onDetail={loadAturan}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
                     />
                 </div>
-            )}
-
-            <div className="mt-4">
-                <TargetTable
-                    data={data}
-                    loading={
-                        loading || deleting
-                    }
-                    onDetail={loadAturan}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                />
             </div>
 
             {/* =================================================
@@ -424,163 +439,182 @@ export default function TargetPage() {
             ================================================= */}
 
             {targetDetail && (
-                <div className="mt-6">
-                    <div className="mb-3 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-lg font-semibold">
-                                Aturan Target
-                            </h2>
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-4 md:px-5">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                                    <ChevronRight size={20} />
+                                </div>
 
-                            <p className="text-sm text-gray-500">
-                                {targetDetail.kode_batch}
-                            </p>
-                        </div>
+                                <div>
+                                    <h2 className="text-base font-semibold text-slate-900">
+                                        Aturan Target
+                                    </h2>
 
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={
-                                    handleAturanCreate
-                                }
-                                className="rounded bg-black px-3 py-2 text-sm text-white"
-                            >
-                                Tambah Aturan
-                            </button>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Target:{' '}
+                                        <span className="font-semibold text-blue-700">
+                                            {targetDetail.kode_batch}
+                                        </span>
 
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setTargetDetail(null);
-                                    setAturan([]);
-                                    setAturanFormOpen(false);
-                                    setAturanSelected(null);
-                                    setAturanDetail([]);
-                                    setAturanDetailTarget(null);
-                                    setAturanDetailFormOpen(false);
-                                    setAturanDetailSelected(null);
-                                }}
-                                className="rounded border px-3 py-2 text-sm"
-                            >
-                                Tutup
-                            </button>
+                                        <span className="mx-2 text-slate-300">
+                                            •
+                                        </span>
+
+                                        {aturan.length} aturan
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleAturanCreate}
+                                    className="flex h-10 items-center gap-2 rounded-lg bg-blue-900 px-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                                >
+                                    <Plus size={17} />
+                                    Tambah Aturan
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTargetDetail(null);
+                                        setAturan([]);
+                                        setAturanFormOpen(false);
+                                        setAturanSelected(null);
+                                        setAturanDetail([]);
+                                        setAturanDetailTarget(null);
+                                        setAturanDetailFormOpen(false);
+                                        setAturanDetailSelected(null);
+                                    }}
+                                    title="Tutup"
+                                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-red-600"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {aturanFormOpen && (
-                        <div className="mb-4">
-                            <TargetAturanForm
-                                data={aturanSelected}
-                                targetId={
-                                    targetDetail.id
-                                }
-                                loading={aturanSaving}
-                                onSubmit={
-                                    handleAturanSubmit
-                                }
-                                onCancel={
-                                    handleAturanCancel
-                                }
-                            />
+                        <div className="border-b border-slate-200 bg-slate-50 p-4 md:p-5">
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <TargetAturanForm
+                                    data={aturanSelected}
+                                    targetId={targetDetail.id}
+                                    loading={aturanSaving}
+                                    onSubmit={handleAturanSubmit}
+                                    onCancel={handleAturanCancel}
+                                />
+                            </div>
                         </div>
                     )}
 
-                    <TargetAturanTable
-                        data={aturan}
-                        loading={
-                            aturanLoading ||
-                            aturanDeleting
-                        }
-                        onDetail={
-                            loadAturanDetail
-                        }
-                        onEdit={
-                            handleAturanEdit
-                        }
-                        onDelete={
-                            handleAturanDelete
-                        }
-                    />
+                    <div className="overflow-x-auto">
+                        <TargetAturanTable
+                            data={aturan}
+                            loading={aturanLoading || aturanDeleting}
+                            onDetail={loadAturanDetail}
+                            onEdit={handleAturanEdit}
+                            onDelete={handleAturanDelete}
+                        />
+                    </div>
 
-                    {/* =============================================
+                    {/* =================================================
                         DETAIL ATURAN
-                    ============================================= */}
+                    ================================================= */}
 
                     {aturanDetailTarget && (
-                        <div className="mt-6">
-                            <div className="mb-3 flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-lg font-semibold">
-                                        Detail Aturan
-                                    </h3>
+                        <div className="m-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:m-5">
+                            <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                                            <Layers size={18} />
+                                        </div>
 
-                                    <p className="text-sm text-gray-500">
-                                        {
-                                            aturanDetailTarget.nomor_aturan
-                                        }
-                                    </p>
-                                </div>
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-900">
+                                                Detail Aturan
+                                            </h3>
 
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={
-                                            handleAturanDetailCreate
-                                        }
-                                        className="rounded bg-black px-3 py-2 text-sm text-white"
-                                    >
-                                        Tambah Detail
-                                    </button>
+                                            <p className="mt-0.5 text-xs text-slate-500">
+                                                Aturan:{' '}
+                                                <span className="font-semibold text-blue-700">
+                                                    {
+                                                        aturanDetailTarget.nomor_aturan
+                                                    }
+                                                </span>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setAturanDetailTarget(null);
-                                            setAturanDetail([]);
-                                            setAturanDetailFormOpen(false);
-                                            setAturanDetailSelected(null);
-                                        }}
-                                        className="rounded border px-3 py-2 text-sm"
-                                    >
-                                        Tutup
-                                    </button>
+                                                <span className="mx-2 text-slate-300">
+                                                    •
+                                                </span>
+
+                                                {aturanDetail.length} detail
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleAturanDetailCreate}
+                                            className="flex h-9 items-center gap-2 rounded-lg bg-blue-900 px-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                                        >
+                                            <Plus size={16} />
+                                            Tambah Detail
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setAturanDetailTarget(null);
+                                                setAturanDetail([]);
+                                                setAturanDetailFormOpen(false);
+                                                setAturanDetailSelected(null);
+                                            }}
+                                            title="Tutup"
+                                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-red-600"
+                                        >
+                                            <X size={17} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
                             {aturanDetailFormOpen && (
-                                <div className="mb-4">
-                                    <TargetAturanDetailForm
-                                        data={
-                                            aturanDetailSelected
-                                        }
-                                        targetAturanId={
-                                            aturanDetailTarget.id
-                                        }
-                                        loading={
-                                            aturanDetailSaving
-                                        }
-                                        onSubmit={
-                                            handleAturanDetailSubmit
-                                        }
-                                        onCancel={
-                                            handleAturanDetailCancel
-                                        }
-                                    />
+                                <div className="border-b border-slate-200 bg-slate-50 p-4">
+                                    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                        <TargetAturanDetailForm
+                                            data={aturanDetailSelected}
+                                            targetAturanId={
+                                                aturanDetailTarget.id
+                                            }
+                                            loading={aturanDetailSaving}
+                                            onSubmit={
+                                                handleAturanDetailSubmit
+                                            }
+                                            onCancel={
+                                                handleAturanDetailCancel
+                                            }
+                                        />
+                                    </div>
                                 </div>
                             )}
 
-                            <TargetAturanDetailTable
-                                data={aturanDetail}
-                                loading={
-                                    aturanDetailLoading ||
-                                    aturanDetailDeleting
-                                }
-                                onEdit={
-                                    handleAturanDetailEdit
-                                }
-                                onDelete={
-                                    handleAturanDetailDelete
-                                }
-                            />
+                            <div className="overflow-x-auto">
+                                <TargetAturanDetailTable
+                                    data={aturanDetail}
+                                    loading={
+                                        aturanDetailLoading ||
+                                        aturanDetailDeleting
+                                    }
+                                    onEdit={handleAturanDetailEdit}
+                                    onDelete={handleAturanDetailDelete}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>

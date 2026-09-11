@@ -175,7 +175,7 @@ const SidebarItem = ({
                                 text-[#243B72]
                               `
                             : `
-                                text-slate-500
+                                text-slate-900
                                 hover:bg-blue-50/70
                                 hover:text-[#243B72]
                               `

@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -13,6 +14,8 @@ return new class extends Migration
 
             $table->uuid('target_id');
 
+            $table->uuid('target_aturan_detail_id');
+
             $table->unsignedInteger('nomor_bal');
             $table->decimal('berat_kotor', 12, 3);
 
@@ -23,8 +26,13 @@ return new class extends Migration
                 ->on('timbangan_pos1_target')
                 ->cascadeOnDelete();
 
+            $table->foreign('target_aturan_detail_id')
+                ->references('id')
+                ->on('timbangan_pos1_target_aturan_detail')
+                ->cascadeOnDelete();
+
             $table->unique([
-                'target_id',
+                'target_aturan_detail_id',
                 'nomor_bal',
             ]);
         });

@@ -1,0 +1,1 @@
+import{n as e}from"./app-Dw_RGOr0.js";var t=`/timbangan/pos1/report`,n={getAll:()=>e.get(t),getByTarget:n=>e.get(`${t}/${n}`)};export{n as t};

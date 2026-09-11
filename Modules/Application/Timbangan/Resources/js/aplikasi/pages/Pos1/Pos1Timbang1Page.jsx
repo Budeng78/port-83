@@ -20,9 +20,14 @@ import {
 import targetService from '@Modules/Application/Timbangan/Resources/js/aplikasi/services/Pos1/targetService.js';
 
 
+// =========================================================
+// KONFIGURASI MQTT
+// =========================================================
+
 const MQTT_URL = 'ws://192.168.1.102:9001';
 
-const MQTT_TOPIC = '/timbangan/data';
+const MQTT_TOPIC =
+    '/timbangan/posrajangkrosok/penerimaan';
 
 const MQTT_OPTIONS = {
     username: 'tes',
@@ -31,82 +36,83 @@ const MQTT_OPTIONS = {
 };
 
 
+// =========================================================
+// PAGE
+// =========================================================
+
 export default function Pos1Timbang1Page() {
 
-    // =========================================================
-    // TARGET / DETAIL STATE & REF
-    // =========================================================
+    // =====================================================
+    // TARGET / DETAIL
+    // =====================================================
 
     const targetIdRef = useRef(null);
-
     const currentIndexRef = useRef(1);
-
     const targetListRef = useRef([]);
 
     const [targetList, setTargetList] = useState([]);
-
     const [selectedTargetId, setSelectedTargetId] = useState('');
-
     const [detailList, setDetailList] = useState([]);
-
     const [selectedDetailId, setSelectedDetailId] = useState('');
 
 
-    // =========================================================
-    // LOG & POLLING REF
-    // =========================================================
+    // =====================================================
+    // REQUEST / MQTT REF
+    // =====================================================
 
     const logBoxRef = useRef(null);
-
-    const gridPollingRef = useRef(null);
-
     const isFetchingRef = useRef(false);
-
     const mqttClientRef = useRef(null);
 
 
-    // =========================================================
-    // UI & CONNECTION STATE
-    // =========================================================
+    // =====================================================
+    // CONNECTION / LIVE WEIGHT
+    // =====================================================
 
     const [isConnected, setIsConnected] = useState(false);
-
     const [weightDisplay, setWeightDisplay] = useState('0.00');
-
     const [timeDisplay, setTimeDisplay] = useState('-');
+
+
+    // =====================================================
+    // LOG
+    // =====================================================
 
     const [logs, setLogs] = useState([
         '[Sistem] Menunggu data dari Pos 1 Timbang 1...',
     ]);
 
 
-    // =========================================================
-    // PACK GRID STATE
-    // =========================================================
+    // =====================================================
+    // GRID BAL
+    // =====================================================
 
     const [currentIndex, setCurrentIndex] = useState(1);
-
     const [totalBoxes, setTotalBoxes] = useState(5);
-
     const [packValues, setPackValues] = useState({});
-
     const [isFinished, setIsFinished] = useState(false);
 
+    // Jumlah bal sudah memenuhi target
+    const [isTargetFull, setIsTargetFull] = useState(false);
 
-    // =========================================================
-    // SYNCHRONIZE TARGET REF
-    // =========================================================
+
+    // =====================================================
+    // SYNC TARGET REF
+    // =====================================================
 
     useEffect(() => {
+
         targetListRef.current = targetList;
+
     }, [targetList]);
 
 
-    // =========================================================
-    // HELPER
-    // =========================================================
+    // =====================================================
+    // LOG
+    // =====================================================
 
     const addLog = useCallback((text) => {
+
         const time = new Date().toLocaleTimeString(
             'id-ID',
             {
@@ -118,67 +124,123 @@ export default function Pos1Timbang1Page() {
             ...prev,
             `[${time}] ${text}`,
         ]);
+
     }, []);
 
 
+    // =====================================================
+    // SET NOMOR BAL BERIKUTNYA
+    // =====================================================
+
     const setNextPack = useCallback((next) => {
+
         const value = Number(next) || 1;
 
         currentIndexRef.current = value;
 
         setCurrentIndex(value);
+
     }, []);
 
 
-    // =========================================================
+    // =====================================================
     // AUTO SCROLL LOG
-    // =========================================================
+    // =====================================================
 
     useEffect(() => {
+
         if (logBoxRef.current) {
+
             logBoxRef.current.scrollTop =
                 logBoxRef.current.scrollHeight;
+
         }
+
     }, [logs]);
 
 
-    // =========================================================
+    // =====================================================
     // GET TARGET AKTIF
-    // =========================================================
+    // =====================================================
 
     const fetchTargetAktif = useCallback(async () => {
+
         try {
+
             const res = await getTargetAktif();
 
             if (res.data?.success) {
-                const data = res.data.data || [];
+
+                const data =
+                    res.data.data || [];
 
                 setTargetList(data);
 
                 targetListRef.current = data;
+
             }
+
         } catch (err) {
+
+            console.error(
+                'Gagal mengambil target aktif:',
+                err
+            );
+
             addLog(
                 'Gagal mengambil daftar target aktif.'
             );
+
         }
+
     }, [addLog]);
 
 
-    // =========================================================
+    // =====================================================
     // LOAD TARGET SAAT MOUNT
-    // =========================================================
+    // =====================================================
 
     useEffect(() => {
+
         fetchTargetAktif();
+
     }, [fetchTargetAktif]);
 
 
-    // =========================================================
-    // PILIH TARGET → LOAD DETAIL
-    // =========================================================
+    // =====================================================
+    // RESET GRID
+    // =====================================================
+
+    const resetGrid = useCallback(() => {
+
+        setPackValues({});
+
+        setNextPack(1);
+
+        setTotalBoxes(5);
+
+        setWeightDisplay('0.00');
+
+        setTimeDisplay('-');
+
+        setIsFinished(false);
+
+        setIsTargetFull(false);
+
+    }, [setNextPack]);
+
+
+    // =====================================================
+    // PILIH TARGET
+    // =====================================================
 
     const handleSelectTarget = async (newTargetId) => {
+
+        if (isConnected) {
+
+            return;
+
+        }
 
         setSelectedTargetId(newTargetId);
 
@@ -186,22 +248,35 @@ export default function Pos1Timbang1Page() {
 
         setDetailList([]);
 
+        targetIdRef.current =
+            newTargetId || null;
+
+        resetGrid();
+
         if (!newTargetId) {
+
             return;
+
         }
 
         try {
 
-            const res = await targetService.getById(
-                newTargetId
-            );
+            const res =
+                await targetService.getById(
+                    newTargetId
+                );
 
             const aturan =
                 res.data?.data?.aturan ?? [];
 
-            const details = aturan.flatMap(
-                (item) => item.detail ?? []
-            );
+            const details =
+                aturan.flatMap(
+                    (item) =>
+                        (item.detail ?? []).filter(
+                            (detail) =>
+                                detail.status !== 'finish'
+                        )
+                );
 
             setDetailList(details);
 
@@ -219,13 +294,66 @@ export default function Pos1Timbang1Page() {
             addLog(
                 'Gagal mengambil detail target.'
             );
+
         }
+
     };
 
 
-    // =========================================================
-    // MQTT — LIVE WEIGHT
-    // =========================================================
+    // =====================================================
+    // PILIH DETAIL
+    // =====================================================
+
+    const handleSelectDetail = async (detailId) => {
+
+        if (isConnected) {
+
+            return;
+
+        }
+
+        setSelectedDetailId(detailId);
+
+        resetGrid();
+
+        if (
+            !detailId ||
+            !selectedTargetId
+        ) {
+
+            return;
+
+        }
+
+        try {
+
+            targetIdRef.current =
+                selectedTargetId;
+
+            await ambilLiveData(
+                selectedTargetId,
+                detailId
+            );
+
+        } catch (err) {
+
+            console.error(
+                'Gagal memuat data detail:',
+                err
+            );
+
+            addLog(
+                'Gagal memuat data penimbangan item.'
+            );
+
+        }
+
+    };
+
+
+    // =====================================================
+    // MQTT DISCONNECT
+    // =====================================================
 
     const disconnectMqtt = useCallback(() => {
 
@@ -236,6 +364,7 @@ export default function Pos1Timbang1Page() {
             mqttClientRef.current.end(true);
 
             mqttClientRef.current = null;
+
         }
 
         setIsConnected(false);
@@ -243,21 +372,32 @@ export default function Pos1Timbang1Page() {
     }, []);
 
 
+    // =====================================================
+    // MQTT CONNECT
+    // =====================================================
+
     const connectMqtt = useCallback(() => {
 
         if (mqttClientRef.current) {
+
             return;
+
         }
 
         addLog(
             'Menghubungkan ke MQTT broker...'
         );
 
-        const client = mqtt.connect(
-            MQTT_URL,
-            MQTT_OPTIONS
-        );
+        const client =
+            mqtt.connect(
+                MQTT_URL,
+                MQTT_OPTIONS
+            );
 
+
+        // -------------------------------------------------
+        // CONNECT
+        // -------------------------------------------------
 
         client.on('connect', () => {
 
@@ -272,287 +412,326 @@ export default function Pos1Timbang1Page() {
                 (err) => {
 
                     if (err) {
+
                         addLog(
                             `Gagal subscribe topic ${MQTT_TOPIC}.`
                         );
+
+                        return;
                     }
+
+                    addLog(
+                        `Subscribe topic ${MQTT_TOPIC} berhasil.`
+                    );
+
                 }
             );
+
         });
 
+
+        // -------------------------------------------------
+        // MESSAGE
+        // -------------------------------------------------
 
         client.on(
             'message',
             (topic, payload) => {
 
                 if (topic !== MQTT_TOPIC) {
+
                     return;
+
                 }
 
-                try {
+                const raw =
+                    payload
+                        .toString()
+                        .trim();
 
-                    const data = JSON.parse(
-                        payload.toString()
-                    );
+                const weight =
+                    Number(raw);
 
-                    if (
-                        data?.value !== undefined
-                    ) {
+                if (!Number.isFinite(weight)) {
 
-                        setWeightDisplay(
-                            Number(data.value)
-                                .toFixed(2)
-                        );
+                    return;
 
-                        setTimeDisplay(
-                            data.time ||
-                            new Date()
-                                .toLocaleTimeString(
-                                    'id-ID',
-                                    {
-                                        hour12: false,
-                                    }
-                                )
-                        );
-                    }
-
-                } catch (err) {
-
-                    addLog(
-                        'Payload MQTT tidak valid / gagal di-parse.'
-                    );
                 }
-            }
-        );
-
-
-        client.on('error', (err) => {
-
-            addLog(
-                `MQTT error: ${err?.message || err}`
-            );
-        });
-
-
-        client.on('close', () => {
-
-            setIsConnected(false);
-        });
-
-
-        mqttClientRef.current = client;
-
-    }, [addLog]);
-
-
-    // =========================================================
-    // DISCONNECT TIMBANGAN
-    // =========================================================
-
-    const disconnectTimbangan = useCallback(() => {
-
-        disconnectMqtt();
-
-        if (gridPollingRef.current) {
-
-            clearInterval(
-                gridPollingRef.current
-            );
-
-            gridPollingRef.current = null;
-        }
-
-        addLog(
-            'Pemantauan data timbang dihentikan.'
-        );
-
-    }, [
-        disconnectMqtt,
-        addLog,
-    ]);
-
-
-    // =========================================================
-    // POLLING GRID STAGING
-    // =========================================================
-
-    const ambilLiveData = useCallback(async () => {
-
-        const activeTargetId =
-            targetIdRef.current;
-
-        if (
-            !activeTargetId ||
-            isFetchingRef.current
-        ) {
-            return;
-        }
-
-        try {
-
-            isFetchingRef.current = true;
-
-            const res = await getLiveData(
-                activeTargetId
-            );
-
-            if (!res.data?.success) {
-                return;
-            }
-
-            const {
-                cache_data,
-                active_cache,
-                next_nomor_bal,
-            } = res.data;
-
-
-            const values = {};
-
-            if (
-                Array.isArray(cache_data) &&
-                cache_data.length > 0
-            ) {
-
-                cache_data.forEach((item) => {
-
-                    const noBal =
-                        Number(item.nomor_bal);
-
-                    const berat =
-                        Number(item.berat_kotor);
-
-                    if (
-                        Number.isFinite(noBal) &&
-                        Number.isFinite(berat)
-                    ) {
-
-                        values[noBal] =
-                            berat.toFixed(2);
-                    }
-                });
-            }
-
-
-            const totalTerisi =
-                Object.keys(values).length;
-
-
-            const currentTarget =
-                targetListRef.current.find(
-                    (item) =>
-                        String(item.id) ===
-                        String(activeTargetId)
-                );
-
-
-            const targetBal =
-                Number(
-                    currentTarget?.jumlah_bal
-                ) || 0;
-
-
-            if (targetBal > 0) {
-
-                if (
-                    next_nomor_bal >
-                    targetBal
-                ) {
-
-                    addLog(
-                        `⚠️ PERINGATAN: Input timbang (${next_nomor_bal - 1} bal) MELEBIHI target kerja (${targetBal} bal)!`
-                    );
-
-                } else if (
-                    totalTerisi === targetBal
-                ) {
-
-                    addLog(
-                        `✅ INFORMASI: Jumlah bal yang ditimbang sudah PAS dengan target (${targetBal} bal).`
-                    );
-                }
-            }
-
-
-            setPackValues((prev) => {
-
-                const isSame =
-                    JSON.stringify(prev) ===
-                    JSON.stringify(values);
-
-                return isSame
-                    ? prev
-                    : values;
-            });
-
-
-            if (active_cache) {
 
                 setWeightDisplay(
-                    Number(
-                        active_cache.berat_kotor
-                    ).toFixed(2)
+                    weight.toFixed(2)
                 );
 
                 setTimeDisplay(
-                    new Date(
-                        active_cache.updated_at
-                    ).toLocaleTimeString(
+                    new Date().toLocaleTimeString(
                         'id-ID',
                         {
                             hour12: false,
                         }
                     )
                 );
+
             }
+        );
 
 
-            if (next_nomor_bal) {
+        // -------------------------------------------------
+        // ERROR
+        // -------------------------------------------------
 
-                setNextPack(
-                    next_nomor_bal
-                );
-
-                setTotalBoxes((prev) =>
-                    Math.max(
-                        5,
-                        Math.ceil(
-                            next_nomor_bal / 5
-                        ) * 5
-                    )
-                );
-            }
-
-        } catch (err) {
+        client.on('error', (err) => {
 
             addLog(
-                'Gagal menyinkronkan data live dari server.'
+                `MQTT error: ${err?.message || err}`
             );
 
-        } finally {
-
-            isFetchingRef.current = false;
-        }
-
-    }, [
-        addLog,
-        setNextPack,
-    ]);
+        });
 
 
-    // =========================================================
+        // -------------------------------------------------
+        // CLOSE
+        // -------------------------------------------------
+
+        client.on('close', () => {
+
+            setIsConnected(false);
+
+        });
+
+
+        mqttClientRef.current =
+            client;
+
+    }, [addLog]);
+
+
+    // =====================================================
+    // DISCONNECT TIMBANGAN
+    // =====================================================
+
+    const disconnectTimbangan =
+        useCallback(() => {
+
+            disconnectMqtt();
+
+            addLog(
+                'Pemantauan data timbang dihentikan.'
+            );
+
+        }, [
+            disconnectMqtt,
+            addLog,
+        ]);
+
+
+    // =====================================================
+    // GET LIVE DATA
+    // =====================================================
+
+    const ambilLiveData = useCallback(
+        async (
+            targetId = targetIdRef.current,
+            detailId = selectedDetailId
+        ) => {
+
+            if (
+                !targetId ||
+                !detailId ||
+                isFetchingRef.current
+            ) {
+
+                return;
+
+            }
+
+            try {
+
+                isFetchingRef.current =
+                    true;
+
+                const res =
+                    await getLiveData(
+                        targetId,
+                        detailId
+                    );
+
+                if (!res.data?.success) {
+
+                    return;
+
+                }
+
+                const {
+                    cache_data = [],
+                    active_cache,
+                    next_nomor_bal,
+                } = res.data;
+
+
+                // -----------------------------------------
+                // MAPPING CACHE
+                // -----------------------------------------
+
+                const values = {};
+
+                cache_data.forEach(
+                    (item) => {
+
+                        const noBal =
+                            Number(
+                                item.nomor_bal
+                            );
+
+                        const berat =
+                            Number(
+                                item.berat_kotor
+                            );
+
+                        if (
+                            Number.isFinite(noBal) &&
+                            Number.isFinite(berat)
+                        ) {
+
+                            values[noBal] =
+                                berat.toFixed(2);
+
+                        }
+
+                    }
+                );
+
+
+                // -----------------------------------------
+                // TARGET BAL DETAIL
+                // -----------------------------------------
+
+                const selectedDetail =
+                    detailList.find(
+                        (item) =>
+                            String(item.id) ===
+                            String(detailId)
+                    );
+
+                const targetBal =
+                    Number(
+                        selectedDetail?.jumlah_bal
+                    ) || 0;
+
+                const totalTerisi =
+                    Object.keys(values).length;
+
+                const targetFull =
+                    targetBal > 0 &&
+                    totalTerisi >= targetBal;
+
+                setIsTargetFull(
+                    targetFull
+                );
+
+                if (targetFull) {
+
+                    addLog(
+                        `Jumlah bal sudah terpenuhi (${targetBal} bal).`
+                    );
+
+                }
+
+
+                // -----------------------------------------
+                // UPDATE GRID
+                // -----------------------------------------
+
+                setPackValues(values);
+
+
+                // -----------------------------------------
+                // ACTIVE CACHE
+                // -----------------------------------------
+
+                if (active_cache) {
+
+                    setWeightDisplay(
+                        Number(
+                            active_cache.berat_kotor
+                        ).toFixed(2)
+                    );
+
+                    setTimeDisplay(
+                        new Date(
+                            active_cache.updated_at
+                        ).toLocaleTimeString(
+                            'id-ID',
+                            {
+                                hour12: false,
+                            }
+                        )
+                    );
+
+                }
+
+
+                // -----------------------------------------
+                // NEXT BAL
+                // -----------------------------------------
+
+                if (next_nomor_bal) {
+
+                    setNextPack(
+                        next_nomor_bal
+                    );
+
+                    setTotalBoxes(
+                        Math.max(
+                            5,
+                            Math.ceil(
+                                next_nomor_bal / 5
+                            ) * 5
+                        )
+                    );
+
+                }
+
+            } catch (err) {
+
+                console.error(
+                    'Gagal sinkronisasi live data:',
+                    err
+                );
+
+                addLog(
+                    'Gagal menyinkronkan data timbang.'
+                );
+
+            } finally {
+
+                isFetchingRef.current =
+                    false;
+
+            }
+
+        },
+        [
+            selectedDetailId,
+            detailList,
+            addLog,
+            setNextPack,
+        ]
+    );
+
+
+    // =====================================================
     // CONNECT / STOP
-    // =========================================================
+    // =====================================================
 
-    const handleConnect = () => {
+    const handleConnect = async () => {
 
         if (isConnected) {
 
             disconnectTimbangan();
 
             return;
-        }
 
+        }
 
         if (!selectedTargetId) {
 
@@ -561,8 +740,8 @@ export default function Pos1Timbang1Page() {
             );
 
             return;
-        }
 
+        }
 
         if (!selectedDetailId) {
 
@@ -571,12 +750,16 @@ export default function Pos1Timbang1Page() {
             );
 
             return;
-        }
 
+        }
 
         targetIdRef.current =
             selectedTargetId;
 
+        await ambilLiveData(
+            selectedTargetId,
+            selectedDetailId
+        );
 
         connectMqtt();
 
@@ -584,29 +767,12 @@ export default function Pos1Timbang1Page() {
             'Memulai pemantauan live data Pos 1 Timbang 1 (MQTT)...'
         );
 
-
-        ambilLiveData();
-
-
-        if (gridPollingRef.current) {
-
-            clearInterval(
-                gridPollingRef.current
-            );
-        }
-
-
-        gridPollingRef.current =
-            setInterval(
-                ambilLiveData,
-                5000
-            );
     };
 
 
-    // =========================================================
+    // =====================================================
     // SIMPAN BAL
-    // =========================================================
+    // =====================================================
 
     const handleSavePack = async (
         nomor,
@@ -616,10 +782,14 @@ export default function Pos1Timbang1Page() {
         const activeTargetId =
             targetIdRef.current;
 
-        if (!activeTargetId) {
-            return;
-        }
+        if (
+            !activeTargetId ||
+            !selectedDetailId
+        ) {
 
+            return;
+
+        }
 
         if (
             !berat ||
@@ -631,27 +801,31 @@ export default function Pos1Timbang1Page() {
             );
 
             return;
-        }
 
+        }
 
         try {
 
             addLog(
-                `Mengonfirmasi/menyimpan bal nomor ${nomor} (${berat} KG)...`
+                `Mengonfirmasi bal nomor ${nomor} (${berat} KG)...`
             );
 
+            const res =
+                await storeStream({
 
-            const res = await storeStream({
+                    target_id:
+                        activeTargetId,
 
-                target_id:
-                    activeTargetId,
+                    target_aturan_detail_id:
+                        selectedDetailId,
 
-                nomor_bal:
-                    nomor,
+                    nomor_bal:
+                        nomor,
 
-                berat_kotor:
-                    berat,
-            });
+                    berat_kotor:
+                        berat,
+
+                });
 
 
             if (res.data?.success) {
@@ -660,22 +834,33 @@ export default function Pos1Timbang1Page() {
                     `Bal No. ${nomor} berhasil dikonfirmasi.`
                 );
 
-                ambilLiveData();
+                await ambilLiveData(
+                    activeTargetId,
+                    selectedDetailId
+                );
+
             }
 
         } catch (err) {
+
+            console.error(
+                'Gagal menyimpan bal:',
+                err
+            );
 
             addLog(
                 err.response?.data?.message ||
                 `Gagal menyimpan data bal ${nomor}.`
             );
+
         }
+
     };
 
 
-    // =========================================================
-    // HAPUS BAL
-    // =========================================================
+    // =====================================================
+    // HAPUS BAL DARI CACHE
+    // =====================================================
 
     const handleDeletePack = async (
         nomor
@@ -684,84 +869,92 @@ export default function Pos1Timbang1Page() {
         const activeTargetId =
             targetIdRef.current;
 
-        if (!activeTargetId) {
-            return;
-        }
+        if (
+            !activeTargetId ||
+            !selectedDetailId
+        ) {
 
+            return;
+
+        }
 
         if (
             !window.confirm(
                 `Hapus data bal nomor ${nomor} dari staging?`
             )
         ) {
-            return;
-        }
 
+            return;
+
+        }
 
         try {
 
-            isFetchingRef.current = true;
-
             const res =
                 await getLiveData(
-                    activeTargetId
+                    activeTargetId,
+                    selectedDetailId
                 );
 
             const cacheItems =
                 res.data?.cache_data || [];
 
-
             const targetCache =
                 cacheItems.find(
                     (item) =>
                         Number(item.nomor_bal) ===
-                        nomor
+                        Number(nomor)
                 );
-
 
             if (!targetCache) {
 
                 addLog(
-                    `Item bal ${nomor} tidak ditemukan di staging.`
+                    `Bal ${nomor} tidak ditemukan di staging.`
                 );
 
                 return;
-            }
 
+            }
 
             const delRes =
                 await deleteCache(
                     targetCache.id
                 );
 
-
             if (delRes.data?.success) {
 
                 addLog(
                     `Bal No. ${nomor} berhasil dihapus dari staging.`
                 );
+
+                await ambilLiveData(
+                    activeTargetId,
+                    selectedDetailId
+                );
+
             }
 
         } catch (err) {
+
+            console.error(
+                'Gagal menghapus bal:',
+                err
+            );
 
             addLog(
                 `Gagal menghapus bal ${nomor}.`
             );
 
-        } finally {
-
-            isFetchingRef.current = false;
-
-            ambilLiveData();
         }
+
     };
 
 
-    // =========================================================
+    // =====================================================
     // RESET UI
-    // =========================================================
+    // =====================================================
 
-    const resetUI = () => {
+    const resetUI = useCallback(() => {
 
         disconnectTimbangan();
 
@@ -785,40 +978,41 @@ export default function Pos1Timbang1Page() {
 
         setIsFinished(false);
 
-        addLog(
-            'Sesi penimbangan dibatalkan dan form di-reset.'
-        );
-    };
+        setIsTargetFull(false);
+
+    }, [
+        disconnectTimbangan,
+        setNextPack,
+    ]);
 
 
-    // =========================================================
-    // CANCEL
-    // =========================================================
+    // =====================================================
+    // BATAL / RESET
+    // =====================================================
 
     const handleCancel = async () => {
 
         const activeTargetId =
             targetIdRef.current;
 
-
         if (!activeTargetId) {
 
             resetUI();
 
             return;
-        }
 
+        }
 
         const confirmCancel =
             window.confirm(
-                'Apakah Anda yakin ingin membatalkan? Seluruh data staging/cache untuk target ini di server akan DIHAPUS!'
+                'Apakah Anda yakin ingin membatalkan? Seluruh data staging/cache untuk target ini akan dihapus!'
             );
 
-
         if (!confirmCancel) {
-            return;
-        }
 
+            return;
+
+        }
 
         try {
 
@@ -826,50 +1020,50 @@ export default function Pos1Timbang1Page() {
                 `Membersihkan cache server untuk Target ID: ${activeTargetId}...`
             );
 
-
             const res =
                 await clearCacheByTarget(
                     activeTargetId
                 );
 
-
             const responseData =
                 res.data || res;
 
-
-            if (responseData.success) {
+            if (!responseData.success) {
 
                 addLog(
                     responseData.message ||
-                    'Cache server berhasil dibersihkan.'
+                    'Gagal membersihkan cache.'
                 );
 
+                return;
 
-                try {
+            }
 
-                    await updateTargetStatus(
-                        activeTargetId,
-                        'pending'
-                    );
-
-                } catch (err) {
-
-                    addLog(
-                        'Gagal mengembalikan status target ke pending.'
-                    );
-                }
+            addLog(
+                responseData.message ||
+                'Cache server berhasil dibersihkan.'
+            );
 
 
-                resetUI();
+            try {
 
-                fetchTargetAktif();
+                await updateTargetStatus(
+                    activeTargetId,
+                    'pending'
+                );
 
-            } else {
+            } catch (err) {
 
                 addLog(
-                    `Gagal: ${responseData.message || 'Gagal membersihkan cache.'}`
+                    'Gagal mengembalikan status target ke pending.'
                 );
+
             }
+
+
+            resetUI();
+
+            await fetchTargetAktif();
 
         } catch (err) {
 
@@ -879,21 +1073,25 @@ export default function Pos1Timbang1Page() {
             );
 
             addLog(
-                `Gagal menghapus cache di server: ${err.response?.data?.message || err.message}`
+                `Gagal menghapus cache di server: ${
+                    err.response?.data?.message ||
+                    err.message
+                }`
             );
+
         }
+
     };
 
 
-    // =========================================================
-    // FINISH / COMMIT
-    // =========================================================
+    // =====================================================
+    // SELESAIKAN ITEM
+    // =====================================================
 
     const handleFinish = async () => {
 
         const activeTargetId =
             targetIdRef.current;
-
 
         if (!activeTargetId) {
 
@@ -902,76 +1100,226 @@ export default function Pos1Timbang1Page() {
             );
 
             return;
+
+        }
+
+        if (!selectedDetailId) {
+
+            alert(
+                'Belum ada Detail Timbangan yang dipilih.'
+            );
+
+            return;
+
+        }
+
+
+        // -------------------------------------------------
+        // CEK JUMLAH BAL
+        // -------------------------------------------------
+
+        if (!isTargetFull) {
+
+            alert(
+                'Jumlah bal belum terpenuhi.'
+            );
+
+            return;
+
+        }
+
+
+        const selectedDetail =
+            detailList.find(
+                (item) =>
+                    String(item.id) ===
+                    String(selectedDetailId)
+            );
+
+        if (!selectedDetail) {
+
+            alert(
+                'Detail Timbangan tidak ditemukan.'
+            );
+
+            return;
+
         }
 
 
         if (
             !window.confirm(
-                'Simpan permanen seluruh data penimbangan?'
+                `Selesaikan penimbangan item ${
+                    selectedDetail.jenis_tbk || '-'
+                }?`
             )
         ) {
+
             return;
+
         }
 
 
         try {
 
             addLog(
-                'Memindahkan data cache ke penyimpanan permanen...'
+                'Menyimpan data timbang item secara permanen...'
+            );
+
+            const res =
+                await commitFinal({
+
+                    target_id:
+                        activeTargetId,
+
+                    target_aturan_detail_id:
+                        selectedDetailId,
+
+                });
+
+
+            if (!res.data?.success) {
+
+                return;
+
+            }
+
+
+            // -------------------------------------------------
+            // PUTUS MQTT
+            // -------------------------------------------------
+
+            disconnectTimbangan();
+
+
+            addLog(
+                res.data.message ||
+                'Item berhasil diselesaikan.'
             );
 
 
-            const res =
-                await commitFinal(
+            const statusDetail =
+                res.data.status_detail;
+
+            const targetStatus =
+                res.data.target_status;
+
+
+            if (
+                statusDetail === 'finish'
+            ) {
+
+                addLog(
+                    '✓ Item berhasil diselesaikan.'
+                );
+
+            }
+
+
+            // -----------------------------------------
+            // SEMUA DETAIL SELESAI
+            // -----------------------------------------
+
+            if (
+                targetStatus === 'finish'
+            ) {
+
+                addLog(
+                    '✓ Seluruh item Target sudah selesai.'
+                );
+
+            }
+
+
+            // -----------------------------------------
+            // RESET DETAIL SAJA
+            // -----------------------------------------
+
+            setSelectedDetailId('');
+
+            setPackValues({});
+
+            setWeightDisplay('0.00');
+
+            setTimeDisplay('-');
+
+            setNextPack(1);
+
+            setTotalBoxes(5);
+
+            setIsTargetFull(false);
+
+
+            // -----------------------------------------
+            // REFRESH TARGET
+            // -----------------------------------------
+
+            await fetchTargetAktif();
+
+
+            // -----------------------------------------
+            // LOAD DETAIL TERBARU
+            // -----------------------------------------
+
+            const targetRes =
+                await targetService.getById(
                     activeTargetId
                 );
 
+            const aturan =
+                targetRes.data?.data?.aturan ?? [];
 
-            if (res.data?.success) {
-
-                addLog(
-                    'Seluruh data penimbangan Pos 1 berhasil disimpan secara permanen!'
+            const details =
+                aturan.flatMap(
+                    (item) =>
+                        (item.detail ?? []).filter(
+                            (detail) =>
+                                detail.status !== 'finish'
+                        )
                 );
 
+            setDetailList(details);
+
+
+            // -----------------------------------------
+            // TARGET SUDAH SELESAI
+            // -----------------------------------------
+
+            if (
+                targetStatus === 'finish'
+            ) {
 
                 disconnectTimbangan();
 
-                targetIdRef.current = null;
+                targetIdRef.current =
+                    null;
 
                 setSelectedTargetId('');
 
-                setSelectedDetailId('');
-
                 setDetailList([]);
 
-                setPackValues({});
-
-                setWeightDisplay('0.00');
-
-                setTimeDisplay('-');
-
-                setNextPack(1);
-
-                setTotalBoxes(5);
-
-                setIsFinished(false);
-
-                fetchTargetAktif();
             }
 
         } catch (err) {
 
+            console.error(
+                'Gagal menyelesaikan item:',
+                err
+            );
+
             addLog(
                 err.response?.data?.message ||
-                'Gagal melakukan commit final.'
+                'Gagal menyelesaikan item penimbangan.'
             );
+
         }
+
     };
 
 
-    // =========================================================
-    // CLEANUP
-    // =========================================================
+    // =====================================================
+    // CLEANUP MQTT
+    // =====================================================
 
     useEffect(() => {
 
@@ -979,20 +1327,14 @@ export default function Pos1Timbang1Page() {
 
             disconnectMqtt();
 
-            if (gridPollingRef.current) {
-
-                clearInterval(
-                    gridPollingRef.current
-                );
-            }
         };
 
     }, [disconnectMqtt]);
 
 
-    // =========================================================
+    // =====================================================
     // SCROLL ROW AKTIF
-    // =========================================================
+    // =====================================================
 
     useEffect(() => {
 
@@ -1007,14 +1349,15 @@ export default function Pos1Timbang1Page() {
                 behavior: 'smooth',
                 block: 'nearest',
             });
+
         }
 
     }, [currentIndex]);
 
 
-    // =========================================================
-    // RENDER PACK GRID
-    // =========================================================
+    // =====================================================
+    // RENDER GRID
+    // =====================================================
 
     const renderSheetGrid = () => {
 
@@ -1027,7 +1370,8 @@ export default function Pos1Timbang1Page() {
             i += 5
         ) {
 
-            const start = i + 1;
+            const start =
+                i + 1;
 
 
             groups.push(
@@ -1045,10 +1389,12 @@ export default function Pos1Timbang1Page() {
 
 
                             const isSavedInCache =
-                                packValues[nomor] !==
-                                    undefined &&
-                                packValues[nomor] !==
-                                    '';
+                                packValues[
+                                    nomor
+                                ] !== undefined &&
+                                packValues[
+                                    nomor
+                                ] !== '';
 
 
                             const isActive =
@@ -1104,7 +1450,7 @@ export default function Pos1Timbang1Page() {
                                     </div>
 
 
-                                    {/* NILAI BERAT */}
+                                    {/* BERAT */}
 
                                     <div className="flex-1 min-w-0 h-full px-2 flex items-center">
 
@@ -1158,10 +1504,12 @@ export default function Pos1Timbang1Page() {
                                             type="button"
                                             disabled={
                                                 !canSave ||
-                                                isFinished
+                                                isFinished ||
+                                                isTargetFull
                                             }
                                             onClick={() =>
                                                 canSave &&
+                                                !isTargetFull &&
                                                 handleSavePack(
                                                     nomor,
                                                     value
@@ -1169,12 +1517,14 @@ export default function Pos1Timbang1Page() {
                                             }
                                             className={`w-7 sm:w-8 h-full font-bold text-sm flex items-center justify-center transition-colors ${
                                                 canSave &&
-                                                !isFinished
+                                                !isFinished &&
+                                                !isTargetFull
                                                     ? 'text-emerald-600 hover:bg-emerald-100 hover:text-emerald-800 active:bg-emerald-200'
                                                     : 'text-gray-300 cursor-not-allowed'
                                             }`}
                                             title={
-                                                canSave
+                                                canSave &&
+                                                !isTargetFull
                                                     ? `Simpan bal ${nomor}`
                                                     : ''
                                             }
@@ -1185,36 +1535,43 @@ export default function Pos1Timbang1Page() {
                                     </div>
 
                                 </div>
+
                             );
+
                         }
                     )}
 
                 </div>
+
             );
+
         }
 
 
         return groups;
+
     };
 
 
-    // =========================================================
+    // =====================================================
     // RENDER
-    // =========================================================
+    // =====================================================
 
     return (
 
         <div className="max-w-6xl mx-auto w-full space-y-4 p-4 md:p-6">
 
-            {/* =====================================================
+            {/* =================================================
                 CARD 1
-            ===================================================== */}
+            ================================================= */}
 
             <div className="bg-white p-4 md:p-6 rounded-xl shadow">
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* INFORMASI */}
+                    {/* -----------------------------------------
+                        TARGET / DETAIL
+                    ----------------------------------------- */}
 
                     <div className="space-y-3">
 
@@ -1234,6 +1591,7 @@ export default function Pos1Timbang1Page() {
                             <label className="block text-xs font-semibold text-gray-500 mb-1">
                                 Pilih Target Kerja
                             </label>
+
 
                             <select
                                 value={
@@ -1255,6 +1613,7 @@ export default function Pos1Timbang1Page() {
                                     -- Pilih Target Kerja --
                                 </option>
 
+
                                 {targetList
                                     .filter(
                                         (item) =>
@@ -1268,7 +1627,13 @@ export default function Pos1Timbang1Page() {
                                                 key={item.id}
                                                 value={item.id}
                                             >
-                                                {`${item.tanggal_formatted || '-'} | ${item.kode_batch || '-'}`}
+                                                {`${ 
+                                                    item.tanggal_formatted ||
+                                                    '-'
+                                                } | ${
+                                                    item.kode_batch ||
+                                                    '-'
+                                                }`}
                                             </option>
 
                                         )
@@ -1287,12 +1652,13 @@ export default function Pos1Timbang1Page() {
                                 Pilih Detail Timbangan
                             </label>
 
+
                             <select
                                 value={
                                     selectedDetailId
                                 }
                                 onChange={(e) =>
-                                    setSelectedDetailId(
+                                    handleSelectDetail(
                                         e.target.value
                                     )
                                 }
@@ -1308,6 +1674,7 @@ export default function Pos1Timbang1Page() {
                                     -- Pilih Detail --
                                 </option>
 
+
                                 {detailList.map(
                                     (detail) => (
 
@@ -1315,7 +1682,25 @@ export default function Pos1Timbang1Page() {
                                             key={detail.id}
                                             value={detail.id}
                                         >
-                                            {`${detail.type || '-'} | ${detail.jenis_tbk || '-'} | ${detail.tahun || '-'} | ${detail.grade || '-'} | ${detail.s_k || '-'} | ${detail.jumlah_bal || 0} Bal`}
+                                            {`${
+                                                detail.type ||
+                                                '-'
+                                            } | ${
+                                                detail.jenis_tbk ||
+                                                '-'
+                                            } | ${
+                                                detail.tahun ||
+                                                '-'
+                                            } | ${
+                                                detail.grade ||
+                                                '-'
+                                            } | ${
+                                                detail.s_k ||
+                                                '-'
+                                            } | ${
+                                                detail.jumlah_bal ||
+                                                0
+                                            } Bal`}
                                         </option>
 
                                     )
@@ -1328,7 +1713,9 @@ export default function Pos1Timbang1Page() {
                     </div>
 
 
-                    {/* LIVE DISPLAY */}
+                    {/* -----------------------------------------
+                        LIVE DISPLAY
+                    ----------------------------------------- */}
 
                     <div className="bg-blue-50 p-4 rounded-xl text-center flex flex-col justify-between border border-blue-200">
 
@@ -1361,7 +1748,8 @@ export default function Pos1Timbang1Page() {
                             Waktu Stream:
 
                             <span className="font-bold">
-                                {' '}{timeDisplay}
+                                {' '}
+                                {timeDisplay}
                             </span>
 
                         </div>
@@ -1401,9 +1789,9 @@ export default function Pos1Timbang1Page() {
             </div>
 
 
-            {/* =====================================================
+            {/* =================================================
                 CARD 2
-            ===================================================== */}
+            ================================================= */}
 
             <div className="bg-white p-3 md:p-4 rounded-xl shadow w-full max-w-6xl mx-auto space-y-3">
 
@@ -1415,15 +1803,26 @@ export default function Pos1Timbang1Page() {
                             Lembar Bal (Pos 1)
                         </h2>
 
+
                         <div className="text-[11px] text-gray-500">
 
                             Bal aktif berikutnya:
 
                             <span className="font-bold text-blue-600">
-                                {' '}{currentIndex}
+                                {' '}
+                                {currentIndex}
                             </span>
 
                         </div>
+
+
+                        {isTargetFull && (
+
+                            <span className="text-xs text-amber-600 font-semibold">
+                                ⚠ Jumlah bal sudah terpenuhi.
+                            </span>
+
+                        )}
 
 
                         {isFinished && (
@@ -1437,7 +1836,7 @@ export default function Pos1Timbang1Page() {
                     </div>
 
 
-                    {/* AKSI FINAL */}
+                    {/* AKSI */}
 
                     <div className="flex items-center gap-2">
 
@@ -1459,9 +1858,18 @@ export default function Pos1Timbang1Page() {
                                 onClick={
                                     handleFinish
                                 }
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow transition-colors"
+                                disabled={
+                                    !selectedDetailId ||
+                                    !isTargetFull
+                                }
+                                className={`px-4 py-2 rounded-lg font-bold text-xs shadow transition-colors ${
+                                    selectedDetailId &&
+                                    isTargetFull
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                }`}
                             >
-                                Commit Final (Selesai)
+                                Selesaikan Item
                             </button>
 
                         )}
@@ -1470,6 +1878,8 @@ export default function Pos1Timbang1Page() {
 
                 </div>
 
+
+                {/* GRID */}
 
                 <div className="flex flex-wrap gap-2 md:gap-3 max-h-72 overflow-y-auto p-1 border rounded-lg bg-gray-50/50">
 
@@ -1480,9 +1890,9 @@ export default function Pos1Timbang1Page() {
             </div>
 
 
-            {/* =====================================================
-                CARD 3
-            ===================================================== */}
+            {/* =================================================
+                CARD 3 - LOG
+            ================================================= */}
 
             <div
                 ref={logBoxRef}
@@ -1502,5 +1912,7 @@ export default function Pos1Timbang1Page() {
             </div>
 
         </div>
+
     );
+
 }

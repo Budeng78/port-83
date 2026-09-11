@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-
+import.meta.env.VITE_APP_NAME
 import { useAuth } from '@Modules/Platform/Auth/Resources/js/aplikasi/context/AuthContext';
 
 import LogoWartono from '../../components/logo_mc-wartono.png';
@@ -245,7 +245,7 @@ export default function TopNavbar() {
                             mt-1
                         "
                     >
-                        Integrated Management System
+                        {import.meta.env.VITE_APP_NAME}
                     </p>
 
                 </div>
@@ -901,7 +901,7 @@ export default function TopNavbar() {
                                             tracking-widest
                                         "
                                     >
-                                        Integrated Management System
+                                        {import.meta.env.VITE_APP_NAME}
                                     </p>
 
                                 </div>

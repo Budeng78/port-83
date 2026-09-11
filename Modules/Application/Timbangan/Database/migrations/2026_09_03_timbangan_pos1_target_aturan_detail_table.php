@@ -35,8 +35,13 @@ return new class extends Migration
             $table->string('s_k', 10);
 
             $table->unsignedInteger('jumlah_bal');
-            $table->decimal('berat_bruto', 10, 3);
-            $table->decimal('tara', 10, 3);
+            $table->decimal('berat_bruto', 10, 2);
+            $table->decimal('tara', 10, 2);
+            $table->enum('status', [
+                'pending',
+                'active',
+                'finish',
+            ])->default('pending');
 
 
 

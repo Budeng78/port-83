@@ -4,7 +4,7 @@ namespace Modules\Application\Timbangan\Http\Controllers\Pos1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use Modules\Application\Timbangan\Http\Requests\Pos1\TargetRequest;
+use Modules\Application\Timbangan\Http\Request\Pos1\TargetRequest;
 use Modules\Application\Timbangan\Models\Pos1\Target;
 use Modules\Application\Timbangan\Services\Pos1\TargetService;
 
@@ -76,6 +76,15 @@ class TargetController extends Controller
 
         return response()->json([
             'message' => 'Target berhasil dihapus.',
+        ]);
+    }
+    /**
+     * Kode batch berikutnya.
+     */
+    public function nextCode(): JsonResponse
+    {
+        return response()->json([
+            'kode_batch' => $this->service->getNextKodeBatch(),
         ]);
     }
 }

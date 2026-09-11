@@ -13,8 +13,15 @@ return new class extends Migration
 
             $table->uuid('target_id');
 
+            $table->uuid('target_aturan_detail_id');
+
             $table->unsignedInteger('nomor_bal');
             $table->decimal('berat_kotor', 12, 3);
+            $table->enum('status_rajang', [
+                'pending',
+                'proses',
+                'finish',
+            ])->default('pending')->index();
 
             $table->timestamps();
             $table->softDeletes();
@@ -24,8 +31,13 @@ return new class extends Migration
                 ->on('timbangan_pos1_target')
                 ->cascadeOnDelete();
 
+            $table->foreign('target_aturan_detail_id')
+                ->references('id')
+                ->on('timbangan_pos1_target_aturan_detail')
+                ->cascadeOnDelete();
+
             $table->unique([
-                'target_id',
+                'target_aturan_detail_id',
                 'nomor_bal',
             ]);
         });
@@ -36,4 +48,3 @@ return new class extends Migration
         Schema::dropIfExists('timbangan_pos1_timbang1');
     }
 };
-

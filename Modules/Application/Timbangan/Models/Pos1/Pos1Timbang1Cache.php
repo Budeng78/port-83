@@ -2,37 +2,45 @@
 
 namespace Modules\Application\Timbangan\Models\Pos1;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use App\Models\BaseModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Pos1Timbang1Cache extends Model
+class Pos1Timbang1Cache extends BaseModel
 {
-    use HasUuids;
-
     protected $table = 'timbangan_pos1_timbang1_cache';
-
-    protected $keyType = 'string';
-    public $incrementing = false;
 
     protected $fillable = [
         'id',
-        'kode_batch',
+        'target_id',
+        'target_aturan_detail_id',
         'nomor_bal',
         'berat_kotor',
     ];
 
     protected $casts = [
         'nomor_bal'   => 'integer',
-        'berat_kotor' => 'decimal:2',
+        'berat_kotor' => 'decimal:3',
     ];
 
     /**
-     * Override UUID generator bawaan Laravel
-     * agar menggunakan UUIDv7.
+     * Cache berada dalam satu Target.
      */
-    public function newUniqueId(): string
+    public function target(): BelongsTo
     {
-        return (string) Str::uuid7();
+        return $this->belongsTo(
+            Target::class,
+            'target_id'
+        );
+    }
+
+    /**
+     * Cache berada dalam satu Detail Aturan.
+     */
+    public function targetAturanDetail(): BelongsTo
+    {
+        return $this->belongsTo(
+            TargetAturanDetail::class,
+            'target_aturan_detail_id'
+        );
     }
 }

@@ -76,4 +76,39 @@ class TargetService
             $target->delete();
         });
     }
+
+    /**
+     * Generate kode batch berikutnya.
+     */
+    /**
+     * Generate kode batch berikutnya.
+     */
+    public function getNextKodeBatch(): string
+    {
+        $tahun = now()->year;
+        $bulan = now()->format('m');
+        $tahunDuaDigit = now()->format('y');
+
+        $lastKode = Target::query()
+            ->whereYear('created_at', $tahun)
+            ->orderByDesc('created_at')
+            ->value('kode_batch');
+
+        $nomor = 1;
+
+        if (
+            $lastKode &&
+            preg_match(
+                '/^(\d+)-\d{4}-BATCH-POS1$/',
+                $lastKode,
+                $match
+            )
+        ) {
+            $nomor = ((int) $match[1]) + 1;
+        }
+
+        return str_pad($nomor, 3, '0', STR_PAD_LEFT)
+            . '-' . $bulan . $tahunDuaDigit
+            . '-BATCH-POS1';
+    }
 }

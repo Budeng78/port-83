@@ -1,0 +1,725 @@
+ /* =========================================================
+    TIMBANGAN REPORT PRINT
+    SCREEN / PREVIEW
+    ========================================================= */
+
+
+/* =========================================================
+   A. BASE
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+
+html,
+body,
+#root {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    margin: 0;
+    padding: 0;
+
+    overflow-x: hidden;
+}
+
+
+body {
+    background: #e5e7eb;
+
+    color: #111827;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 12px;
+
+    line-height: 1.35;
+}
+
+
+/* =========================================================
+   B. PRINT ACTION
+   ========================================================= */
+
+.report-print-actions {
+    display: flex;
+
+    justify-content: center;
+
+    width: 100%;
+
+    padding: 16px;
+
+    background: #e5e7eb;
+}
+
+
+.report-print-actions button {
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   C. REPORT CONTAINER
+   ========================================================= */
+
+.report-print-container {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    margin: 0;
+
+    padding: 0;
+}
+
+
+/* =========================================================
+   D. REPORT SHEET
+   ========================================================= */
+
+.report-print-sheet {
+    width: 215.9mm;
+
+    min-height: 330.2mm;
+
+    margin: 16px auto;
+
+    padding:
+        10mm
+        8mm
+        12mm
+        8mm;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.15);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   E. PAGE NUMBER
+   ========================================================= */
+
+.report-print-page-number {
+    width: 100%;
+
+    margin-bottom: 3mm;
+
+    color: #6b7280;
+
+    font-size: 9px;
+
+    line-height: 1.2;
+
+    text-align: right;
+}
+
+
+/* =========================================================
+   F. HEADER
+   ========================================================= */
+
+.report-print-header {
+    width: 100%;
+
+    padding-bottom: 5mm;
+
+    border-bottom:
+        1px solid
+        #111827;
+
+    text-align: center;
+}
+
+
+.report-print-title {
+    font-size: 17px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.3px;
+}
+
+
+.report-print-subtitle {
+    margin-top: 2px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.2px;
+}
+
+
+/* =========================================================
+   G. INFORMATION
+   ========================================================= */
+
+.report-print-info {
+    width: 100%;
+
+    margin-top: 5mm;
+
+    margin-bottom: 5mm;
+
+    padding:
+        3mm
+        4mm;
+
+    border:
+        1px solid
+        #9ca3af;
+
+    border-radius: 3px;
+
+    background: #f9fafb;
+}
+
+
+.report-print-info-row {
+    display: grid;
+
+    grid-template-columns:
+        30mm
+        1fr;
+
+    width: 100%;
+
+    min-width: 0;
+
+    padding: 1px 0;
+}
+
+
+.report-print-info-row span {
+    font-weight: 600;
+}
+
+
+.report-print-info-row strong {
+    min-width: 0;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   H. ATURAN
+   ========================================================= */
+
+.report-print-aturan {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    margin-bottom: 5mm;
+
+    break-inside: avoid;
+
+    page-break-inside: avoid;
+}
+
+
+.report-print-aturan-header {
+    display: flex;
+
+    align-items: center;
+
+    width: 100%;
+
+    min-width: 0;
+
+    margin-bottom: 2mm;
+
+    padding:
+        2mm
+        3mm;
+
+    border:
+        1px solid
+        #9ca3af;
+
+    border-bottom: 0;
+
+    background: #f3f4f6;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   I. MAIN TABLE
+   ========================================================= */
+
+.report-print-table {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    border-collapse: collapse;
+
+    border-spacing: 0;
+
+    table-layout: auto;
+
+    font-size: 12px;
+}
+
+
+.report-print-table th,
+.report-print-table td {
+    min-width: 0;
+
+    padding:
+        1.2mm
+        0.8mm;
+
+    border:
+        1px solid
+        #6b7280;
+
+    vertical-align: middle;
+
+    overflow: hidden;
+
+    overflow-wrap: break-word;
+
+    word-break: normal;
+}
+
+
+.report-print-table th {
+    background: #e5e7eb;
+
+    color: #111827;
+
+    font-weight: 700;
+
+    text-align: center;
+
+    white-space: normal;
+}
+
+
+.report-print-table td {
+    background: #ffffff;
+}
+
+
+/* =========================================================
+   J. COLUMN ALIGNMENT
+   ========================================================= */
+
+
+/* No */
+
+.report-print-table th:nth-child(1),
+.report-print-table td:nth-child(1) {
+    text-align: center;
+}
+
+
+/* Type */
+
+.report-print-table th:nth-child(2),
+.report-print-table td:nth-child(2) {
+    text-align: center;
+}
+
+
+/* Jenis TBK */
+
+.report-print-table th:nth-child(3),
+.report-print-table td:nth-child(3) {
+    text-align: left;
+}
+
+
+/* Tahun */
+
+.report-print-table th:nth-child(4),
+.report-print-table td:nth-child(4) {
+    text-align: center;
+}
+
+
+/* S/K */
+
+.report-print-table th:nth-child(5),
+.report-print-table td:nth-child(5) {
+    text-align: center;
+}
+
+
+/* Grade */
+
+.report-print-table th:nth-child(6),
+.report-print-table td:nth-child(6) {
+    text-align: center;
+}
+
+
+/* Jumlah Bal */
+
+.report-print-table th:nth-child(7),
+.report-print-table td:nth-child(7) {
+    text-align: right;
+}
+
+
+/* Tara */
+
+.report-print-table th:nth-child(8),
+.report-print-table td:nth-child(8) {
+    text-align: right;
+}
+
+
+/* Total Bruto */
+
+.report-print-table th:nth-child(9),
+.report-print-table td:nth-child(9) {
+    text-align: right;
+}
+
+
+/* Total Netto */
+
+.report-print-table th:nth-child(10),
+.report-print-table td:nth-child(10) {
+    text-align: right;
+}
+
+
+/* =========================================================
+   K. SUBTOTAL
+   ========================================================= */
+
+.report-print-subtotal td {
+    background: #f3f4f6;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   L. TOTAL / REKAP
+   ========================================================= */
+
+.report-print-total {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    margin-top: 7mm;
+
+    break-inside: avoid;
+
+    page-break-inside: avoid;
+}
+
+
+.report-print-total-title {
+    padding:
+        2.5mm
+        3mm;
+
+    border:
+        1px solid
+        #374151;
+
+    border-bottom: 0;
+
+    background: #e5e7eb;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    text-align: center;
+}
+
+
+.report-print-total-table {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    border-collapse: collapse;
+
+    table-layout: fixed;
+
+    font-size: 12px;
+}
+
+
+.report-print-total-table td {
+    padding:
+        2mm
+        3mm;
+
+    border:
+        1px solid
+        #6b7280;
+}
+
+
+.report-print-total-table td:first-child {
+    width: 70%;
+
+    font-weight: 600;
+}
+
+
+.report-print-total-table td:last-child {
+    width: 30%;
+
+    text-align: right;
+}
+
+
+.report-print-total-netto td {
+    background: #e5e7eb;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   M. SIGNATURE
+   ========================================================= */
+
+.report-print-signature {
+    width: 100%;
+
+    max-width: 100%;
+
+    min-width: 0;
+
+    margin-top: 12mm;
+
+    break-inside: avoid;
+
+    page-break-inside: avoid;
+}
+
+
+.report-print-signature-date {
+    width: 100%;
+
+    margin-bottom: 7mm;
+
+    text-align: right;
+
+    font-size: 12px;
+}
+
+
+.report-print-signature-grid {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        1fr;
+
+    column-gap: 30mm;
+
+    width: 100%;
+
+    max-width: 100%;
+}
+
+
+.report-print-signature-box {
+    min-width: 0;
+
+    text-align: center;
+
+    font-size: 12px;
+}
+
+
+.signature-space {
+    height: 22mm;
+}
+
+
+.report-print-signature-box > div:last-child {
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   N. FOOTER
+   ========================================================= */
+
+.report-print-footer {
+    width: 100%;
+
+    margin-top: 8mm;
+
+    padding-top: 2mm;
+
+    border-top:
+        1px solid
+        #d1d5db;
+
+    color: #6b7280;
+
+    font-size: 8px;
+
+    text-align: left;
+}
+
+
+/* =========================================================
+   O. LOADING / ERROR
+   ========================================================= */
+
+.report-print-loading {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    min-height: 100vh;
+
+    padding: 20px;
+
+    color: #374151;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   P. SCREEN RESPONSIVE
+   ========================================================= */
+
+@media screen and (max-width: 900px) {
+
+    body {
+        background: #e5e7eb;
+    }
+
+
+    .report-print-container {
+        width: 100%;
+
+        max-width: 100%;
+
+        overflow-x: hidden;
+    }
+
+
+    .report-print-sheet {
+        width: 100%;
+
+        min-height: auto;
+
+        margin: 0;
+
+        padding: 20px;
+
+        box-shadow: none;
+
+        overflow-x: hidden;
+    }
+
+
+    .report-print-table {
+        width: 100%;
+
+        font-size: 8px;
+
+        table-layout: auto;
+    }
+
+
+    .report-print-table th,
+    .report-print-table td {
+        padding:
+            4px
+            2px;
+    }
+
+
+    .report-print-title {
+        font-size: 15px;
+    }
+
+
+    .report-print-subtitle {
+        font-size: 10px;
+    }
+
+
+    .report-print-info {
+        margin-top: 4mm;
+
+        margin-bottom: 4mm;
+    }
+
+
+    .report-print-info-row {
+        grid-template-columns:
+            25mm
+            1fr;
+    }
+
+
+    .report-print-aturan-header {
+        font-size: 10px;
+    }
+
+
+    .report-print-total {
+        margin-top: 5mm;
+    }
+
+
+    .report-print-signature {
+        margin-top: 8mm;
+    }
+
+
+    .report-print-signature-grid {
+        column-gap: 15mm;
+    }
+
+
+    .signature-space {
+        height: 18mm;
+    }
+
+}

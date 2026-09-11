@@ -113,29 +113,11 @@ export default function DefaultLayout() {
     |--------------------------------------------------------------------------
     | NORMALIZE USER MENU
     |--------------------------------------------------------------------------
-    |
-    | Sumber menu hanya dari AuthContext.
-    |
     */
 
     const menus = Array.isArray(userMenus)
         ? userMenus
         : [];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | DEBUG
-    |--------------------------------------------------------------------------
-    */
-
-    useEffect(() => {
-
-
-    }, [
-        user,
-        menus,
-    ]);
 
 
     /*
@@ -146,24 +128,34 @@ export default function DefaultLayout() {
 
     return (
 
-        <div
-            className="
-                flex
-                flex-col
-                h-screen
-                overflow-hidden
-                bg-slate-50
-                antialiased
-            "
-        >
+<div
+    className="
+        flex
+        flex-col
+        h-screen
+        overflow-hidden
+        bg-slate-50
+        antialiased
+
+        print:block
+        print:h-auto
+        print:min-h-0
+        print:overflow-visible
+        print:bg-white
+    "
+>
 
             {/* ==============================================================
                 TOP NAVBAR
             ============================================================== */}
 
-            <TopNavbar
-                user={user}
-            />
+            <div className="print:hidden">
+
+                <TopNavbar
+                    user={user}
+                />
+
+            </div>
 
 
             {/* ==============================================================
@@ -175,6 +167,9 @@ export default function DefaultLayout() {
                     flex
                     flex-1
                     overflow-hidden
+                    print:block
+                    print:w-full
+                    print:overflow-visible
                 "
             >
 
@@ -191,6 +186,7 @@ export default function DefaultLayout() {
                             border-slate-200
                             transition-all
                             duration-300
+                            print:hidden
 
                             ${
                                 isCollapsed
@@ -228,6 +224,12 @@ export default function DefaultLayout() {
                         flex-1
                         overflow-y-auto
                         bg-slate-50
+
+                        print:block
+                        print:w-full
+                        print:max-w-none
+                        print:overflow-visible
+                        print:bg-white
                     "
                 >
 
@@ -237,6 +239,11 @@ export default function DefaultLayout() {
                             md:p-8
                             max-w-7xl
                             mx-auto
+
+                            print:w-full
+                            print:max-w-none
+                            print:m-0
+                            print:p-0
                         "
                     >
 
@@ -251,8 +258,8 @@ export default function DefaultLayout() {
                                 }
 
                                 initial={{
-                                    opacity: 0,
-                                    y: 5,
+                                    opacity: 1,
+                                    y: 0,
                                 }}
 
                                 animate={{
@@ -261,12 +268,12 @@ export default function DefaultLayout() {
                                 }}
 
                                 exit={{
-                                    opacity: 0,
-                                    y: -5,
+                                    opacity: 1,
+                                    y: 0,
                                 }}
 
                                 transition={{
-                                    duration: 0.15,
+                                    duration: 0,
                                 }}
                             >
 
@@ -294,11 +301,15 @@ export default function DefaultLayout() {
 
             {isMobile && (
 
-                <BottomNavbar
-                    menus={
-                        menus
-                    }
-                />
+                <div className="print:hidden">
+
+                    <BottomNavbar
+                        menus={
+                            menus
+                        }
+                    />
+
+                </div>
 
             )}
 

@@ -1,0 +1,465 @@
+/* =========================================================
+   TIMBANGAN REPORT PRINT
+   KHUSUS CETAK
+   F4 PORTRAIT
+   ========================================================= */
+
+
+/* =========================================================
+   A. PAGE
+   ========================================================= */
+
+@page {
+    size: F4 portrait;
+    margin: 8mm;
+}
+
+
+/* =========================================================
+   B. RESET DOKUMEN SAAT PRINT
+   ========================================================= */
+
+@media print {
+
+    html,
+    body,
+    #root {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #ffffff !important;
+
+        overflow: visible !important;
+    }
+
+
+    /* =====================================================
+       C. LAYOUT APLIKASI
+       ===================================================== */
+
+    main {
+        width: 100% !important;
+        max-width: none !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        overflow: visible !important;
+
+        background: #ffffff !important;
+    }
+
+
+    main > div {
+        width: 100% !important;
+        max-width: none !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+
+    /* =====================================================
+       D. REPORT CONTAINER
+       ===================================================== */
+
+    .report-print-container {
+        display: block !important;
+
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #ffffff !important;
+
+        overflow: visible !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* =====================================================
+       E. TOMBOL PRINT
+       ===================================================== */
+
+    .report-print-actions {
+        display: none !important;
+    }
+
+
+    /* =====================================================
+       F. REPORT SHEET
+
+       1 SHEET = 1 HALAMAN CETAK
+       ===================================================== */
+
+    .report-print-sheet {
+        display: block !important;
+
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #ffffff !important;
+
+        box-shadow: none !important;
+
+        overflow: visible !important;
+
+        box-sizing: border-box !important;
+
+        break-after: page !important;
+    }
+
+
+    .report-print-sheet:last-child {
+        break-after: auto !important;
+    }
+
+
+    /* =====================================================
+       G. NOMOR HALAMAN
+       ===================================================== */
+
+    .report-print-page-number {
+        display: block !important;
+
+        width: 100% !important;
+
+        margin: 0 0 3mm 0 !important;
+        padding: 0 !important;
+
+        color: #111827 !important;
+
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+
+        text-align: right !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* =====================================================
+       H. HEADER REPORT
+       ===================================================== */
+
+    .report-print-header {
+        display: block !important;
+
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+
+        margin: 0 !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .report-print-title {
+        font-size: 17px !important;
+
+        font-weight: 700 !important;
+
+        text-align: center !important;
+    }
+
+
+    .report-print-subtitle {
+        font-size: 12px !important;
+
+        font-weight: 600 !important;
+
+        text-align: center !important;
+    }
+
+
+    /* =====================================================
+       I. INFORMASI REPORT
+       ===================================================== */
+
+    .report-print-info {
+        display: block !important;
+
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .report-print-info-row {
+        display: grid !important;
+
+        grid-template-columns: 30mm 1fr !important;
+
+        width: 100% !important;
+        min-width: 0 !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* =====================================================
+       J. ATURAN
+       ===================================================== */
+
+    .report-print-aturan {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        box-sizing: border-box !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+
+    .report-print-aturan-header {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        box-sizing: border-box !important;
+
+        font-size: 12px !important;
+    }
+
+
+    /* =====================================================
+       K. TABLE UTAMA
+       ===================================================== */
+
+    .report-print-table {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        margin: 0 !important;
+
+        table-layout: auto !important;
+
+        border-collapse: collapse !important;
+
+        border-spacing: 0 !important;
+
+        font-size: 12px !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .report-print-table th,
+    .report-print-table td {
+        min-width: 0 !important;
+
+        max-width: none !important;
+
+        padding: 1.2mm 0.8mm !important;
+
+        box-sizing: border-box !important;
+
+        overflow: hidden !important;
+
+        overflow-wrap: break-word !important;
+
+        word-break: normal !important;
+    }
+
+
+    .report-print-table th {
+        font-weight: 700 !important;
+
+        text-align: center !important;
+    }
+
+
+    /* =====================================================
+       L. SUBTOTAL
+       ===================================================== */
+
+    .report-print-subtotal {
+        break-inside: avoid !important;
+
+        page-break-inside: avoid !important;
+    }
+
+
+    .report-print-subtotal td {
+        font-weight: 700 !important;
+    }
+
+
+    /* =====================================================
+       M. REKAP
+       ===================================================== */
+
+    .report-print-total {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        box-sizing: border-box !important;
+
+        break-inside: avoid !important;
+
+        page-break-inside: avoid !important;
+    }
+
+
+    .report-print-total-title {
+        font-size: 12px !important;
+
+        font-weight: 700 !important;
+
+        text-align: center !important;
+    }
+
+
+    .report-print-total-table {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        table-layout: fixed !important;
+
+        border-collapse: collapse !important;
+
+        border-spacing: 0 !important;
+
+        font-size: 12px !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .report-print-total-table td {
+        min-width: 0 !important;
+
+        max-width: none !important;
+
+        box-sizing: border-box !important;
+
+        overflow: hidden !important;
+
+        overflow-wrap: break-word !important;
+
+        word-break: normal !important;
+    }
+
+
+    .report-print-total-netto {
+        break-inside: avoid !important;
+
+        page-break-inside: avoid !important;
+    }
+
+
+    .report-print-total-netto td {
+        font-size: 14px !important;
+
+        font-weight: 700 !important;
+    }
+
+
+    /* =====================================================
+       N. TANDA TANGAN
+       ===================================================== */
+
+    .report-print-signature {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        box-sizing: border-box !important;
+
+        break-inside: avoid !important;
+
+        page-break-inside: avoid !important;
+    }
+
+
+    .report-print-signature-date {
+        width: 100% !important;
+
+        font-size: 12px !important;
+
+        text-align: right !important;
+    }
+
+
+    .report-print-signature-grid {
+        display: grid !important;
+
+        grid-template-columns: 1fr 1fr !important;
+
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        column-gap: 30mm !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .report-print-signature-box {
+        min-width: 0 !important;
+
+        font-size: 12px !important;
+
+        text-align: center !important;
+    }
+
+
+    .signature-space {
+        height: 22mm !important;
+    }
+
+
+    /* =====================================================
+       O. FOOTER
+       ===================================================== */
+
+    .report-print-footer {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        min-width: 0 !important;
+
+        box-sizing: border-box !important;
+
+        break-inside: avoid !important;
+
+        page-break-inside: avoid !important;
+
+        font-size: 8px !important;
+    }
+
+}

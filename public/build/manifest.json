@@ -1,31 +1,64 @@
 {
-  "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/Pos1TargetPage.jsx": {
-    "file": "assets/Pos1TargetPage-6qTnXUVy.js",
-    "name": "Pos1TargetPage",
-    "src": "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/Pos1TargetPage.jsx",
-    "isDynamicEntry": true,
-    "imports": [
-      "_jsx-runtime-gnJnb015.js",
-      "Modules/Platform/Dashboard/Resources/js/app.jsx",
-      "_createLucideIcon-CGdC-YAj.js",
-      "_square-pen-vejHjTLx.js",
-      "_file-text-CwC4RAVG.js",
-      "_loader-circle-CfzGKJRM.js",
-      "_plus-DXd8y3Nd.js",
-      "_printer-5u-UcbcL.js",
-      "_search-CqmL80By.js",
-      "_trash-2-DLP_jVPo.js",
-      "_x-DryI0RwT.js"
-    ]
-  },
   "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/Pos1Timbang1Page.jsx": {
-    "file": "assets/Pos1Timbang1Page-CnyOGd8M.js",
+    "file": "assets/Pos1Timbang1Page-Dik3FOlQ.js",
     "name": "Pos1Timbang1Page",
     "src": "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/Pos1Timbang1Page.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_jsx-runtime-gnJnb015.js",
-      "Modules/Platform/Dashboard/Resources/js/app.jsx"
+      "Modules/Platform/Dashboard/Resources/js/app.jsx",
+      "_targetService-CUI1UI-S.js"
+    ]
+  },
+  "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/TimbanganReportPage.jsx": {
+    "file": "assets/TimbanganReportPage-De4eaj6j.js",
+    "name": "TimbanganReportPage",
+    "src": "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/TimbanganReportPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-gnJnb015.js",
+      "Modules/Platform/Dashboard/Resources/js/app.jsx",
+      "_eye-Cb0mCJJ6.js",
+      "_printer-5u-UcbcL.js",
+      "_refresh-cw-Ce9bzc4n.js",
+      "_search-CqmL80By.js",
+      "_x-DryI0RwT.js",
+      "_timbanganReportService-BEikfD68.js"
+    ]
+  },
+  "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/components/TimbanganReportPrint.jsx": {
+    "file": "assets/TimbanganReportPrint-CK4_8O0r.js",
+    "name": "TimbanganReportPrint",
+    "src": "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/components/TimbanganReportPrint.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-gnJnb015.js",
+      "Modules/Platform/Dashboard/Resources/js/app.jsx",
+      "_printer-5u-UcbcL.js",
+      "_timbanganReportService-BEikfD68.js"
+    ],
+    "css": [
+      "assets/TimbanganReportPrint-CmaBuF7R.css"
+    ]
+  },
+  "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/target/TargetPage.jsx": {
+    "file": "assets/TargetPage-BZz-JOMz.js",
+    "name": "TargetPage",
+    "src": "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/target/TargetPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-gnJnb015.js",
+      "Modules/Platform/Dashboard/Resources/js/app.jsx",
+      "_targetService-CUI1UI-S.js",
+      "_createLucideIcon-CGdC-YAj.js",
+      "_chevron-right-DBd1rYHk.js",
+      "_eye-Cb0mCJJ6.js",
+      "_layers-CSdX9g8f.js",
+      "_pencil-BetRuNhI.js",
+      "_plus-DXd8y3Nd.js",
+      "_refresh-cw-Ce9bzc4n.js",
+      "_trash-2-DLP_jVPo.js",
+      "_x-DryI0RwT.js"
     ]
   },
   "Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/Dashboard.jsx": {
@@ -43,7 +76,7 @@
     ]
   },
   "Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/TimbangAwal.jsx": {
-    "file": "assets/TimbangAwal-ooSQYptt.js",
+    "file": "assets/TimbangAwal-uFvPvX1O.js",
     "name": "TimbangAwal",
     "src": "Modules/Business/Produksi/Primary/PosRajang/Resources/js/aplikasi/pages/operasional/terima/TimbangAwal.jsx",
     "isDynamicEntry": true,
@@ -67,7 +100,7 @@
     ]
   },
   "Modules/Business/Rnd/Resources/js/aplikasi/pages/aturan/TobaccoAturan.jsx": {
-    "file": "assets/TobaccoAturan-CgrhZW05.js",
+    "file": "assets/TobaccoAturan-wJGYvg58.js",
     "name": "TobaccoAturan",
     "src": "Modules/Business/Rnd/Resources/js/aplikasi/pages/aturan/TobaccoAturan.jsx",
     "isDynamicEntry": true,
@@ -75,9 +108,9 @@
       "_jsx-runtime-gnJnb015.js",
       "Modules/Platform/Dashboard/Resources/js/app.jsx",
       "_calendar-days-DHohRYk6.js",
-      "_truck-u0NFNjJE.js",
+      "_truck-FeEro9uK.js",
       "_chevron-right-DBd1rYHk.js",
-      "_file-text-CwC4RAVG.js",
+      "_eye-Cb0mCJJ6.js",
       "_pencil-BetRuNhI.js",
       "_plus-DXd8y3Nd.js",
       "_printer-5u-UcbcL.js",
@@ -87,11 +120,11 @@
       "_trash-2-DLP_jVPo.js",
       "_triangle-alert-BLIOuZ8Q.js",
       "_x-DryI0RwT.js",
-      "_tobaccoAturanService-Bmuq5m_b.js"
+      "_tobaccoAturanService-DTNnJp-X.js"
     ]
   },
   "Modules/Business/Rnd/Resources/js/aplikasi/pages/aturan/components/print/TobaccoAturanDetail.jsx": {
-    "file": "assets/TobaccoAturanDetail-8sQoPBYq.js",
+    "file": "assets/TobaccoAturanDetail-DE8re_VE.js",
     "name": "TobaccoAturanDetail",
     "src": "Modules/Business/Rnd/Resources/js/aplikasi/pages/aturan/components/print/TobaccoAturanDetail.jsx",
     "isDynamicEntry": true,
@@ -100,11 +133,11 @@
       "Modules/Platform/Dashboard/Resources/js/app.jsx",
       "_arrow-left-DJr6UpSU.js",
       "_printer-5u-UcbcL.js",
-      "_tobaccoAturanService-Bmuq5m_b.js"
+      "_tobaccoAturanService-DTNnJp-X.js"
     ]
   },
   "Modules/Business/Rnd/Resources/js/aplikasi/pages/kirimantbk/KirimanTbkCreatePage.jsx": {
-    "file": "assets/KirimanTbkCreatePage-BxeXevNc.js",
+    "file": "assets/KirimanTbkCreatePage-Cyw6VI_A.js",
     "name": "KirimanTbkCreatePage",
     "src": "Modules/Business/Rnd/Resources/js/aplikasi/pages/kirimantbk/KirimanTbkCreatePage.jsx",
     "isDynamicEntry": true,
@@ -113,11 +146,11 @@
       "Modules/Platform/Dashboard/Resources/js/app.jsx",
       "_arrow-left-DJr6UpSU.js",
       "_save-BkfZMYOi.js",
-      "_kirimanTbkService-DnoC2h9B.js"
+      "_kirimanTbkService-Db1zCUfe.js"
     ]
   },
   "Modules/Business/Rnd/Resources/js/aplikasi/pages/kirimantbk/KirimanTbkPage.jsx": {
-    "file": "assets/KirimanTbkPage-6TiTN5vX.js",
+    "file": "assets/KirimanTbkPage-Etluwbik.js",
     "name": "KirimanTbkPage",
     "src": "Modules/Business/Rnd/Resources/js/aplikasi/pages/kirimantbk/KirimanTbkPage.jsx",
     "isDynamicEntry": true,
@@ -127,11 +160,11 @@
       "_arrow-left-DJr6UpSU.js",
       "_refresh-cw-Ce9bzc4n.js",
       "_save-BkfZMYOi.js",
-      "_kirimanTbkService-DnoC2h9B.js"
+      "_kirimanTbkService-Db1zCUfe.js"
     ]
   },
   "Modules/Platform/Auth/Resources/js/aplikasi/pages/Login.jsx": {
-    "file": "assets/Login-C6TWqOmn.js",
+    "file": "assets/Login-DkDziRAn.js",
     "name": "Login",
     "src": "Modules/Platform/Auth/Resources/js/aplikasi/pages/Login.jsx",
     "isDynamicEntry": true,
@@ -144,7 +177,7 @@
     ]
   },
   "Modules/Platform/Auth/Resources/js/aplikasi/pages/users/UserManagement.jsx": {
-    "file": "assets/UserManagement-gd84LbCY.js",
+    "file": "assets/UserManagement-DkePnv3b.js",
     "name": "UserManagement",
     "src": "Modules/Platform/Auth/Resources/js/aplikasi/pages/users/UserManagement.jsx",
     "isDynamicEntry": true,
@@ -161,7 +194,7 @@
       "_shield-check-Bf1BYkvx.js",
       "_trash-2-DLP_jVPo.js",
       "_x-DryI0RwT.js",
-      "_UserService-D46dYxKw.js"
+      "_UserService-CMyD1OhX.js"
     ]
   },
   "Modules/Platform/Dashboard/Resources/js/aplikasi/pages/Dashboard.jsx": {
@@ -178,7 +211,7 @@
     "src": "Modules/Platform/Dashboard/Resources/js/aplikasi/templates/components/logo_mc-wartono.png"
   },
   "Modules/Platform/Dashboard/Resources/js/aplikasi/templates/layouts/DefaultLayout.jsx": {
-    "file": "assets/DefaultLayout-DjX1-RpT.js",
+    "file": "assets/DefaultLayout-B-GudCGo.js",
     "name": "DefaultLayout",
     "src": "Modules/Platform/Dashboard/Resources/js/aplikasi/templates/layouts/DefaultLayout.jsx",
     "isDynamicEntry": true,
@@ -186,9 +219,9 @@
       "_jsx-runtime-gnJnb015.js",
       "Modules/Platform/Dashboard/Resources/js/app.jsx",
       "_createLucideIcon-CGdC-YAj.js",
-      "_DynamicIcon-mYqkvIK1.js",
+      "_DynamicIcon-BE8tmiiq.js",
       "_chevron-down-U_KW75ZN.js",
-      "_truck-u0NFNjJE.js",
+      "_truck-FeEro9uK.js",
       "_chevron-right-DBd1rYHk.js",
       "_x-DryI0RwT.js"
     ],
@@ -197,7 +230,7 @@
     ]
   },
   "Modules/Platform/Dashboard/Resources/js/app.jsx": {
-    "file": "assets/app-CbAdiD7g.js",
+    "file": "assets/app-Dw_RGOr0.js",
     "name": "app",
     "src": "Modules/Platform/Dashboard/Resources/js/app.jsx",
     "isEntry": true,
@@ -212,8 +245,10 @@
       "Modules/Business/Rnd/Resources/js/aplikasi/pages/aturan/components/print/TobaccoAturanDetail.jsx",
       "Modules/Business/Rnd/Resources/js/aplikasi/pages/kirimantbk/KirimanTbkPage.jsx",
       "Modules/Business/Rnd/Resources/js/aplikasi/pages/kirimantbk/KirimanTbkCreatePage.jsx",
-      "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/Pos1TargetPage.jsx",
+      "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/target/TargetPage.jsx",
       "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/Pos1Timbang1Page.jsx",
+      "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/TimbanganReportPage.jsx",
+      "Modules/Application/Timbangan/Resources/js/aplikasi/pages/Pos1/components/TimbanganReportPrint.jsx",
       "Modules/Platform/Auth/Resources/js/aplikasi/pages/Login.jsx",
       "Modules/Platform/Dashboard/Resources/js/aplikasi/pages/Dashboard.jsx",
       "Modules/Platform/Dashboard/Resources/js/aplikasi/templates/layouts/DefaultLayout.jsx",
@@ -232,7 +267,7 @@
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/AssignmentManage.jsx": {
-    "file": "assets/AssignmentManage-t07QTSlM.js",
+    "file": "assets/AssignmentManage-Av6eCpMR.js",
     "name": "AssignmentManage",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/AssignmentManage.jsx",
     "isDynamicEntry": true,
@@ -253,13 +288,13 @@
       "_search-CqmL80By.js",
       "_trash-2-DLP_jVPo.js",
       "_x-DryI0RwT.js",
-      "_UserService-D46dYxKw.js",
-      "_organizationUnitService-DB-wUhQd.js",
-      "_organizationLevelService-CdsKpHAE.js"
+      "_UserService-CMyD1OhX.js",
+      "_organizationUnitService-DHJl-jI4.js",
+      "_organizationLevelService-vWSKr4WM.js"
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/OrganizationLevelManage.jsx": {
-    "file": "assets/OrganizationLevelManage-DOfQVFtf.js",
+    "file": "assets/OrganizationLevelManage-BYWeNwd1.js",
     "name": "OrganizationLevelManage",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/OrganizationLevelManage.jsx",
     "isDynamicEntry": true,
@@ -276,11 +311,11 @@
       "_search-CqmL80By.js",
       "_trash-2-DLP_jVPo.js",
       "_x-DryI0RwT.js",
-      "_organizationLevelService-CdsKpHAE.js"
+      "_organizationLevelService-vWSKr4WM.js"
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/OrganizationUnitManage.jsx": {
-    "file": "assets/OrganizationUnitManage-D_h75X4_.js",
+    "file": "assets/OrganizationUnitManage-wa7GzQSG.js",
     "name": "OrganizationUnitManage",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/OrganizationUnitManage.jsx",
     "isDynamicEntry": true,
@@ -297,11 +332,11 @@
       "_search-CqmL80By.js",
       "_trash-2-DLP_jVPo.js",
       "_x-DryI0RwT.js",
-      "_organizationUnitService-DB-wUhQd.js"
+      "_organizationUnitService-DHJl-jI4.js"
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/PermissionManage.jsx": {
-    "file": "assets/PermissionManage-BORD7QGR.js",
+    "file": "assets/PermissionManage-BRa2N-AH.js",
     "name": "PermissionManage",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/PermissionManage.jsx",
     "isDynamicEntry": true,
@@ -323,7 +358,7 @@
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/RoleManage.jsx": {
-    "file": "assets/RoleManage-Dqbu76by.js",
+    "file": "assets/RoleManage-C32-zisq.js",
     "name": "RoleManage",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/RoleManage.jsx",
     "isDynamicEntry": true,
@@ -339,11 +374,11 @@
       "_trash-2-DLP_jVPo.js",
       "_users-CAF3lqwJ.js",
       "_x-DryI0RwT.js",
-      "_roleService-Ca6QsrdK.js"
+      "_roleService-B6TV0IVK.js"
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/RolePermissionManage.jsx": {
-    "file": "assets/RolePermissionManage-CFzyog_r.js",
+    "file": "assets/RolePermissionManage-68SubtLN.js",
     "name": "RolePermissionManage",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/RolePermissionManage.jsx",
     "isDynamicEntry": true,
@@ -359,11 +394,11 @@
       "_shield-check-Bf1BYkvx.js",
       "_users-CAF3lqwJ.js",
       "_x-DryI0RwT.js",
-      "_roleService-Ca6QsrdK.js"
+      "_roleService-B6TV0IVK.js"
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/UserMatrix.jsx": {
-    "file": "assets/UserMatrix-Af7haAbo.js",
+    "file": "assets/UserMatrix-DDtrt0zK.js",
     "name": "UserMatrix",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/UserMatrix.jsx",
     "isDynamicEntry": true,
@@ -384,7 +419,7 @@
     ]
   },
   "Modules/Platform/RBAC/Resources/js/aplikasi/pages/UserMenu.jsx": {
-    "file": "assets/UserMenu-BNJv2Iui.js",
+    "file": "assets/UserMenu-CscsZz6M.js",
     "name": "UserMenu",
     "src": "Modules/Platform/RBAC/Resources/js/aplikasi/pages/UserMenu.jsx",
     "isDynamicEntry": true,
@@ -401,11 +436,11 @@
       "_shield-check-Bf1BYkvx.js",
       "_users-CAF3lqwJ.js",
       "_x-DryI0RwT.js",
-      "_UserService-D46dYxKw.js"
+      "_UserService-CMyD1OhX.js"
     ]
   },
   "Modules/Platform/System/Resources/js/aplikasi/pages/MenuManagement.jsx": {
-    "file": "assets/MenuManagement-BesAemAd.js",
+    "file": "assets/MenuManagement-Cw-Tf-Cy.js",
     "name": "MenuManagement",
     "src": "Modules/Platform/System/Resources/js/aplikasi/pages/MenuManagement.jsx",
     "isDynamicEntry": true,
@@ -413,12 +448,11 @@
       "_jsx-runtime-gnJnb015.js",
       "Modules/Platform/Dashboard/Resources/js/app.jsx",
       "_createLucideIcon-CGdC-YAj.js",
-      "_DynamicIcon-mYqkvIK1.js",
-      "_square-pen-vejHjTLx.js",
+      "_DynamicIcon-BE8tmiiq.js",
       "_chevron-down-U_KW75ZN.js",
+      "_truck-FeEro9uK.js",
       "_chevron-right-DBd1rYHk.js",
       "_circle-alert-BWTaSxY1.js",
-      "_file-text-CwC4RAVG.js",
       "_key-round-Hv7sMWBv.js",
       "_menu-BBGdkRbw.js",
       "_plus-DXd8y3Nd.js",
@@ -427,11 +461,11 @@
       "_shield-check-Bf1BYkvx.js",
       "_trash-2-DLP_jVPo.js",
       "_x-DryI0RwT.js",
-      "_organizationUnitService-DB-wUhQd.js"
+      "_organizationUnitService-DHJl-jI4.js"
     ]
   },
   "Modules/Platform/System/Resources/js/aplikasi/pages/ModuleManager.jsx": {
-    "file": "assets/ModuleManager-DAJI3HXp.js",
+    "file": "assets/ModuleManager-FO2i8soy.js",
     "name": "ModuleManager",
     "src": "Modules/Platform/System/Resources/js/aplikasi/pages/ModuleManager.jsx",
     "isDynamicEntry": true,
@@ -447,7 +481,7 @@
     ]
   },
   "Modules/Platform/System/Resources/js/aplikasi/pages/TrashManagement.jsx": {
-    "file": "assets/TrashManagement-DsImlSDc.js",
+    "file": "assets/TrashManagement-BrKR9MRc.js",
     "name": "TrashManagement",
     "src": "Modules/Platform/System/Resources/js/aplikasi/pages/TrashManagement.jsx",
     "isDynamicEntry": true,
@@ -461,23 +495,22 @@
       "_x-DryI0RwT.js"
     ]
   },
-  "_DynamicIcon-mYqkvIK1.js": {
-    "file": "assets/DynamicIcon-mYqkvIK1.js",
+  "_DynamicIcon-BE8tmiiq.js": {
+    "file": "assets/DynamicIcon-BE8tmiiq.js",
     "name": "DynamicIcon",
     "imports": [
       "_jsx-runtime-gnJnb015.js",
       "_createLucideIcon-CGdC-YAj.js",
       "_trending-up-DvT59Rq-.js",
-      "_square-pen-vejHjTLx.js",
       "_arrow-left-DJr6UpSU.js",
       "_building-2-D1weCWpS.js",
       "_check-Fn32kzs7.js",
       "_chevron-down-U_KW75ZN.js",
-      "_truck-u0NFNjJE.js",
+      "_truck-FeEro9uK.js",
       "_chevron-right-DBd1rYHk.js",
       "_circle-alert-BWTaSxY1.js",
       "_circle-x-C7sDg2je.js",
-      "_file-text-CwC4RAVG.js",
+      "_eye-Cb0mCJJ6.js",
       "_layers-CSdX9g8f.js",
       "_lock-CwTe_D3x.js",
       "_shield-EHD2UKj1.js",
@@ -492,8 +525,8 @@
       "_x-DryI0RwT.js"
     ]
   },
-  "_UserService-D46dYxKw.js": {
-    "file": "assets/UserService-D46dYxKw.js",
+  "_UserService-CMyD1OhX.js": {
+    "file": "assets/UserService-CMyD1OhX.js",
     "name": "UserService",
     "imports": [
       "Modules/Platform/Dashboard/Resources/js/app.jsx"
@@ -569,9 +602,9 @@
       "_jsx-runtime-gnJnb015.js"
     ]
   },
-  "_file-text-CwC4RAVG.js": {
-    "file": "assets/file-text-CwC4RAVG.js",
-    "name": "file-text",
+  "_eye-Cb0mCJJ6.js": {
+    "file": "assets/eye-Cb0mCJJ6.js",
+    "name": "eye",
     "imports": [
       "_createLucideIcon-CGdC-YAj.js"
     ]
@@ -587,8 +620,8 @@
       "_createLucideIcon-CGdC-YAj.js"
     ]
   },
-  "_kirimanTbkService-DnoC2h9B.js": {
-    "file": "assets/kirimanTbkService-DnoC2h9B.js",
+  "_kirimanTbkService-Db1zCUfe.js": {
+    "file": "assets/kirimanTbkService-Db1zCUfe.js",
     "name": "kirimanTbkService",
     "imports": [
       "Modules/Platform/Dashboard/Resources/js/app.jsx"
@@ -622,15 +655,15 @@
       "_createLucideIcon-CGdC-YAj.js"
     ]
   },
-  "_organizationLevelService-CdsKpHAE.js": {
-    "file": "assets/organizationLevelService-CdsKpHAE.js",
+  "_organizationLevelService-vWSKr4WM.js": {
+    "file": "assets/organizationLevelService-vWSKr4WM.js",
     "name": "organizationLevelService",
     "imports": [
       "Modules/Platform/Dashboard/Resources/js/app.jsx"
     ]
   },
-  "_organizationUnitService-DB-wUhQd.js": {
-    "file": "assets/organizationUnitService-DB-wUhQd.js",
+  "_organizationUnitService-DHJl-jI4.js": {
+    "file": "assets/organizationUnitService-DHJl-jI4.js",
     "name": "organizationUnitService",
     "imports": [
       "Modules/Platform/Dashboard/Resources/js/app.jsx"
@@ -671,8 +704,8 @@
       "_createLucideIcon-CGdC-YAj.js"
     ]
   },
-  "_roleService-Ca6QsrdK.js": {
-    "file": "assets/roleService-Ca6QsrdK.js",
+  "_roleService-B6TV0IVK.js": {
+    "file": "assets/roleService-B6TV0IVK.js",
     "name": "roleService",
     "imports": [
       "Modules/Platform/Dashboard/Resources/js/app.jsx"
@@ -720,15 +753,22 @@
       "_createLucideIcon-CGdC-YAj.js"
     ]
   },
-  "_square-pen-vejHjTLx.js": {
-    "file": "assets/square-pen-vejHjTLx.js",
-    "name": "square-pen",
+  "_targetService-CUI1UI-S.js": {
+    "file": "assets/targetService-CUI1UI-S.js",
+    "name": "targetService",
     "imports": [
-      "_createLucideIcon-CGdC-YAj.js"
+      "Modules/Platform/Dashboard/Resources/js/app.jsx"
     ]
   },
-  "_tobaccoAturanService-Bmuq5m_b.js": {
-    "file": "assets/tobaccoAturanService-Bmuq5m_b.js",
+  "_timbanganReportService-BEikfD68.js": {
+    "file": "assets/timbanganReportService-BEikfD68.js",
+    "name": "timbanganReportService",
+    "imports": [
+      "Modules/Platform/Dashboard/Resources/js/app.jsx"
+    ]
+  },
+  "_tobaccoAturanService-DTNnJp-X.js": {
+    "file": "assets/tobaccoAturanService-DTNnJp-X.js",
     "name": "tobaccoAturanService",
     "imports": [
       "Modules/Platform/Dashboard/Resources/js/app.jsx"
@@ -755,8 +795,8 @@
       "_createLucideIcon-CGdC-YAj.js"
     ]
   },
-  "_truck-u0NFNjJE.js": {
-    "file": "assets/truck-u0NFNjJE.js",
+  "_truck-FeEro9uK.js": {
+    "file": "assets/truck-FeEro9uK.js",
     "name": "truck",
     "imports": [
       "_createLucideIcon-CGdC-YAj.js"
@@ -777,7 +817,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-CvdEaWyq.css",
+    "file": "assets/app-Bo6yIgst.css",
     "name": "app",
     "names": [
       "app.css"
