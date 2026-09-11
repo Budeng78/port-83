@@ -17,4 +17,4 @@ git branch -M main
 git push -u origin main
 
 echo "✅ Laravel project berhasil diunggah ke GitHub (versi aman)."
-echo "✅ Pastikan file sensitif (.env, vendor/, node_modules/) sudah terabaikan oleh .gitignore."
+echo "Pastikan file sensitif (.env, vendor/, node_modules/) sudah terabaikan oleh .gitignore."
