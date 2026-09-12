@@ -1,1 +1,0 @@
-import{n as e}from"./app-Dw_RGOr0.js";var t=`/timbangan/pos1/target`,n={getAll:()=>e.get(t),getById:n=>e.get(`${t}/${n}`),create:n=>e.post(t,n),update:(n,r)=>e.put(`${t}/${n}`,r),delete:n=>e.delete(`${t}/${n}`)};export{n as t};
